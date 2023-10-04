@@ -468,7 +468,8 @@ def main():
                 os.remove('images_no_kiln.zip')
 
     else:
-        st.write("The bounding box area is too big. The sq units area should be less than or equal to 0.25")
+        st.write(":red[The bounding box area is too big. The area should be less than or equal to 0.25 sq units]")
+        st.sidebar.write(":red[The bounding box area is too big. The area should be less than or equal to 0.25 sq units]")
 
 
     
