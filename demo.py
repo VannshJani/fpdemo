@@ -449,7 +449,7 @@ def main():
                     axs[1].set_title('GradCAM Superimposed',size="xx-large")
                     cbar = plt.colorbar(grad_plot, ax=axs[1], pad=0.02, shrink=0.91)  
                     cbar.set_label('Heatmap Intensity')
-                    cbar.ax.tick_params(labelsize=15)
+                    cbar.ax.tick_params(labelsize=25)
                     
                     for ax in axs:
                         ax.axis('off')
