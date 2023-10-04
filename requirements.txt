@@ -1,0 +1,12 @@
+streamlit
+folium
+streamlit-folium
+requests
+temp
+zipfile36
+Pillow
+numpy
+tensorflow
+gdown
+matplotlib
+pandas
