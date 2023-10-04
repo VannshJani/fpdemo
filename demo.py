@@ -379,7 +379,7 @@ def main():
                     indices_of_ones = indices_of_ones.tolist()
                     latitudes = latitudes.tolist()
                     longitudes = longitudes.tolist()
-                    st.session_state.india_map=create_map(11)
+                    st.session_state.india_map=create_map(12)
                     bounding_box_polygon.add_to(st.session_state.india_map)
                     for Idx in range(len(lat_brick_kilns)):
                         lat = lat_brick_kilns[Idx]
