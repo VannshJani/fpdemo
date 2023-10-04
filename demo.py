@@ -185,10 +185,10 @@ def main():
     # Specify the latitude and longitude for the rectangular bounding box
     st.sidebar.title("Bounding Box")
     
-    box_lat1 = st.sidebar.number_input("Latitude of Bottom-left corner:", value=28.75, step=0.01,on_change=callback_map)
-    box_lon1 = st.sidebar.number_input("Longitude of Bottom-Left corner:", value=77.85, step=0.01,on_change=callback_map)
-    box_lat2 = st.sidebar.number_input("Latitude of Top-Right corner:", value=28.80, step=0.01,on_change=callback_map)
-    box_lon2 = st.sidebar.number_input("Longitude of Top-Right corner:", value=77.90, step=0.01,on_change=callback_map)
+    box_lat1 = st.sidebar.number_input("Latitude of Bottom-left corner:", value=26.40, step=0.01,on_change=callback_map)
+    box_lon1 = st.sidebar.number_input("Longitude of Bottom-Left corner:", value=79.55, step=0.01,on_change=callback_map)
+    box_lat2 = st.sidebar.number_input("Latitude of Top-Right corner:", value=26.45, step=0.01,on_change=callback_map)
+    box_lon2 = st.sidebar.number_input("Longitude of Top-Right corner:", value=79.60, step=0.01,on_change=callback_map)
     area = np.abs(box_lat2-box_lat1)*np.abs(box_lon2-box_lon1)
     area = round(area,5)
     st.sidebar.write(f"Area of the bounding box is {area} sq units.")
