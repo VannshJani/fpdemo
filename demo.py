@@ -35,7 +35,7 @@ def callback_map():
     st.session_state.india_map = create_map(5)
     st.session_state.zoomed_in=True    
 
-@st.cache_resource
+@st.cache_resource(show_spinner = False)
 def download_model():
     url = 'https://drive.google.com/uc?id=1PpaFM7tjZQ9LuICfNmITrbbJnq4SFGnK'
     output = 'model_vgg_fine_ind_grad.h5'
@@ -217,7 +217,7 @@ def main():
 
 
         if ab and (st.button("Submit",on_click=callback) or st.session_state.button1):
-            @st.cache_resource
+            @st.cache_resource(show_spinner = False)
             def done_before(df,drawn_polygons):
                 st.session_state.ab = ab
                 image_array_list = []
@@ -367,7 +367,7 @@ def main():
 
             st.write("The number of brick kilns in the selected region is: ", count_ones)
             st.write("The number of non-brick kilns in the selected region is: ", count_zeros)
-            i = indices_of_ones[0]
+          
 
             if count_ones!=0:
                 if st.session_state.zoomed_in:
