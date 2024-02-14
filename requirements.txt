@@ -10,3 +10,4 @@ tensorflow
 gdown
 matplotlib
 pandas
+xarray
