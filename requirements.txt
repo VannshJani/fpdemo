@@ -11,3 +11,6 @@ gdown
 matplotlib
 pandas
 xarray
+ultralytics
+huggingface_hub
+torch
