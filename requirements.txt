@@ -275,3 +275,4 @@ wrapt==1.14.1
 xarray==2023.10.1
 xyzservices==2023.10.1
 zipp==3.16.2
+cv2
