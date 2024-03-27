@@ -252,7 +252,7 @@ def main():
                 progress_text = 'Please wait while we process your request...'
                 my_bar = st.progress(0, text=progress_text)
 
-                st.write("Predictions ongoing")
+                # st.write("Predictions ongoing")
                 indices_of_zeros = []
                 indices_of_ones = []
                 prob_flat_list = []
@@ -336,7 +336,7 @@ def main():
                 
 
 
-                st.write("predictions done!")
+                # st.write("predictions done!")
                 return indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list
             indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list=done_before(df,drawn_polygons) 
             temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
@@ -454,7 +454,7 @@ def main():
                 ind = 0
                 for i in indices_of_ones:
                     r = results[i]
-                    st.write(len(r.boxes.cls))
+                    # st.write(len(r.boxes.cls))
                     annotator = Annotator(image_list[i])
                     
                     boxes = r.boxes
@@ -469,7 +469,7 @@ def main():
                         annotator.box_label(b, model.names[int(c)], color=color)
 
                     img = annotator.result()
-                    st.write(len(results))
+                    # st.write(len(results))
                     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
                     ind += 1
                     plt.figure(figsize=(8, 4))
