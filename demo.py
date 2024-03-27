@@ -233,8 +233,8 @@ def main():
                 lon_1 = drawn_polygons[0][0][1]
                 lat_2 = drawn_polygons[0][1][0]
                 lon_2 = drawn_polygons[0][1][1]
-                delta_lat = 0.008
-                delta_lon = 0.008
+                delta_lat = 0.01
+                delta_lon = 0.01
                 latitude = lat_1
                 longitude = lon_1
                 nlat=0
@@ -320,6 +320,7 @@ def main():
                 
                 # indices_of_ones = [index for index, element in enumerate(flat_modified_list) if element == 1]
                 # indices_of_zeros = [index for index, element in enumerate(flat_modified_list) if element == 0]
+                st.write("Predictions ongoing")
                 indices_of_zeros = []
                 indices_of_ones = []
                 prob_flat_list = []
@@ -334,7 +335,7 @@ def main():
                     i += 1
 
 
-
+                st.write("predictions done!")
                 return indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list
             indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list=done_before(df,drawn_polygons) 
             temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
