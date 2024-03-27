@@ -99,7 +99,7 @@ def add_locations(lat,lon,india_map):
 
 
 def imgs_input_fn(images):
-    img_size = (1120, 1120)
+    img_size = (640, 640)
     img_size_tensor = tf.constant(img_size, dtype=tf.int32)
     images = tf.convert_to_tensor(value = images)
     images = tf.image.resize(images, size=img_size_tensor)
@@ -233,8 +233,8 @@ def main():
                 lon_1 = drawn_polygons[0][0][1]
                 lat_2 = drawn_polygons[0][1][0]
                 lon_2 = drawn_polygons[0][1][1]
-                delta_lat = 0.0045
-                delta_lon = 0.0051
+                delta_lat = 0.045
+                delta_lon = 0.051
                 latitude = lat_1
                 longitude = lon_1
                 nlat=0
