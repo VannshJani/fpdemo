@@ -23,7 +23,6 @@ import matplotlib
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
 import matplotlib.pyplot as plt
-import cv2
 
 
 # url = 'https://drive.google.com/uc?id=1DBl_LcIC3-a09bgGqRPAsQsLCbl9ZPJX'
