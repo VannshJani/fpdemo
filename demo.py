@@ -233,8 +233,8 @@ def main():
                 lon_1 = drawn_polygons[0][0][1]
                 lat_2 = drawn_polygons[0][1][0]
                 lon_2 = drawn_polygons[0][1][1]
-                delta_lat = 0.005
-                delta_lon = 0.005
+                delta_lat = 0.0025
+                delta_lon = 0.0025
                 latitude = lat_1
                 longitude = lon_1
                 nlat=0
