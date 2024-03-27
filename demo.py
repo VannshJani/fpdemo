@@ -454,6 +454,7 @@ def main():
                 ind = 0
                 for i in indices_of_ones:
                     r = results[i]
+                    st.write(len(r.boxes.cls))
                     annotator = Annotator(image_list[i])
                     
                     boxes = r.boxes
