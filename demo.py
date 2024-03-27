@@ -252,8 +252,11 @@ def main():
                 progress_text = 'Please wait while we process your request...'
                 my_bar = st.progress(0, text=progress_text)
 
-
-                
+                st.write("Predictions ongoing")
+                indices_of_zeros = []
+                indices_of_ones = []
+                prob_flat_list = []
+                results = []
                 while latitude<=lat_2:
                     while longitude<=lon_2:
                         image_data = get_static_map_image(latitude, longitude, ab)
@@ -283,13 +286,22 @@ def main():
                         # image = image.resize((new_width, new_height), Image.LANCZOS)
 
                         image = image.convert('RGB')
+                        temp_result = model.predict(image_list)
+                        i=0
+                        for r in temp_result:
+                            if len(r.boxes.cls)==0:
+                                indices_of_zeros.append(i)
+                            else:
+                                indices_of_ones.append(i)
+                                prob_flat_list.append(r.boxes.conf.item())
+                            i += 1
 
 
                         # image_np_array = np.array(image)
                             
                         # image_np_array = np.array(image)
                             
-                            
+                        results.append(temp_result[0])
                         image_list.append(image)
                         latitudes.append(latitude)
                         longitudes.append(longitude)
@@ -320,19 +332,8 @@ def main():
                 
                 # indices_of_ones = [index for index, element in enumerate(flat_modified_list) if element == 1]
                 # indices_of_zeros = [index for index, element in enumerate(flat_modified_list) if element == 0]
-                st.write("Predictions ongoing")
-                indices_of_zeros = []
-                indices_of_ones = []
-                prob_flat_list = []
-                results = model.predict(image_list)
-                i=0
-                for r in results:
-                    if len(r.boxes.cls)==0:
-                        indices_of_zeros.append(i)
-                    else:
-                        indices_of_ones.append(i)
-                        prob_flat_list.append(r.boxes.conf.item())
-                    i += 1
+   
+                
 
 
                 st.write("predictions done!")
