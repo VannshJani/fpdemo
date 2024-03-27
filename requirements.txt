@@ -2,13 +2,11 @@ folium
 gdown
 huggingface-hub
 matplotlib
-matplotlib-inline
 numpy
 opencv-python
 pandas
 requests
 scikit-learn
-sklearn
 streamlit
 streamlit-aggrid
 streamlit-folium
