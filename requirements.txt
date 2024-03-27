@@ -3,7 +3,7 @@ gdown
 huggingface-hub
 matplotlib
 numpy
-opencv-python
+opencv-python-headless
 pandas
 requests
 scikit-learn
