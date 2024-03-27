@@ -451,6 +451,7 @@ def main():
 
                 ####### Bounding Boxes ########
                 st.write("Bounding Box Predictions!")
+                ind = 0
                 for i in indices_of_ones:
                     r = results[i]
                     annotator = Annotator(image_list[i])
@@ -467,7 +468,9 @@ def main():
                         annotator.box_label(b, model.names[int(c)], color=color)
 
                     img = annotator.result()
-                    st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(r.boxes.conf.item(),2)}")
+                    st.write(prob_flat_list,indicies_of_ones)
+                    st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
+                    ind += 1
                     plt.figure(figsize=(8, 4))
                     plt.imshow(img)
                     plt.axis('off')
