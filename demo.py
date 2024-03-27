@@ -286,7 +286,7 @@ def main():
                         # image = image.resize((new_width, new_height), Image.LANCZOS)
 
                         image = image.convert('RGB')
-                        temp_result = model.predict(image_list)
+                        temp_result = model.predict(image)
                         i=0
                         for r in temp_result:
                             if len(r.boxes.cls)==0:
