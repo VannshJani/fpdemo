@@ -257,6 +257,7 @@ def main():
                 indices_of_ones = []
                 prob_flat_list = []
                 results = []
+                i=0
                 while latitude<=lat_2:
                     while longitude<=lon_2:
                         image_data = get_static_map_image(latitude, longitude, ab)
@@ -287,14 +288,13 @@ def main():
 
                         image = image.convert('RGB')
                         temp_result = model.predict(image)
-                        i=0
-                        for r in temp_result:
-                            if len(r.boxes.cls)==0:
-                                indices_of_zeros.append(i)
-                            else:
-                                indices_of_ones.append(i)
-                                prob_flat_list.append(r.boxes.conf.item())
-                            i += 1
+                        r = temp_result[0]
+                        if len(r.boxes.cls)==0:
+                            indices_of_zeros.append(i)
+                        else:
+                            indices_of_ones.append(i)
+                            prob_flat_list.append(r.boxes.conf.item())
+                        i += 1
 
 
                         # image_np_array = np.array(image)
