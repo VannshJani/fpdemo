@@ -199,7 +199,7 @@ def main():
     area = round(area,5)
     st.sidebar.write(f"Area of the bounding box is {area} sq units.")
 
-    if area<=0.25:
+    if area<=0.01:
 
         # Add the rectangular bounding box to the map
         bounding_box_polygon = folium.Rectangle(
@@ -551,8 +551,8 @@ def main():
                 os.remove('images_no_kiln.zip')
 
     else:
-        st.write(":red[The bounding box area is too big. The area should be less than or equal to 0.25 sq units]")
-        st.sidebar.write(":red[The bounding box area is too big. The area should be less than or equal to 0.25 sq units]")
+        st.write(":red[The bounding box area is too big. The area should be less than or equal to 0.01 sq units]")
+        st.sidebar.write(":red[The bounding box area is too big. The area should be less than or equal to 0.01 sq units]")
 
 
     
