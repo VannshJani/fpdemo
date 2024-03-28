@@ -223,7 +223,7 @@ def main():
 
 
         if ab and (st.button("Submit",on_click=callback) or st.session_state.button1):
-            # @st.cache_resource(show_spinner = False)
+            @st.cache_resource(show_spinner = False)
             def done_before(df,drawn_polygons):
                 st.session_state.ab = ab
                 image_list = []
