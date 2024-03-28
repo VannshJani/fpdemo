@@ -23,6 +23,9 @@ import matplotlib
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
 import matplotlib.pyplot as plt
+import simplekml
+
+
 
 
 # url = 'https://drive.google.com/uc?id=1DBl_LcIC3-a09bgGqRPAsQsLCbl9ZPJX'
@@ -97,7 +100,11 @@ def add_locations(lat,lon,india_map):
         icon=folium.Icon(color='blue')
     ).add_to(india_map)
 
-
+def generate_kml_content(longs, lats):
+    kml = simplekml.Kml()
+    for lon, lat in zip(longs, lats):
+        kml.newpoint(name="Brick-kiln", coords=[(lon, lat)])
+    return kml.kml()
 
 # def imgs_input_fn(images):
 #     img_size = (640, 640)
@@ -222,7 +229,7 @@ def main():
         
 
 
-        if ab and (st.button("Submit",on_click=callback) or st.session_state.button1):
+        if ab and (st.sidebar.button("Submit",on_click=callback) or st.session_state.button1):
             @st.cache_resource(show_spinner = False)
             def done_before(df,drawn_polygons):
                 st.session_state.ab = ab
@@ -238,6 +245,8 @@ def main():
                 delta_lon = 0.01
                 latitude = lat_1
                 longitude = lon_1
+                lat_ones = []
+                lon_ones = []
                 nlat=0
                 nlong=0
                 while latitude<=lat_2:
@@ -259,11 +268,11 @@ def main():
                 prob_flat_list = []
                 results = []
                 i=0
-                while latitude<=lat_2:
-                    while longitude<=lon_2:
+                while round(latitude,2)<=lat_2:
+                    while round(longitude,2)<=lon_2:
                         image_data = get_static_map_image(latitude, longitude, ab)
                         image = Image.open(io.BytesIO(image_data))
-
+                        # st.write(latitude,longitude)
                 
                         # Get the size of the image (width, height)
                         # width, height = image.size
@@ -295,9 +304,13 @@ def main():
                         elif len(r.boxes.cls)==1:
                             indices_of_ones.append(i)
                             prob_flat_list.append(r.boxes.conf.item())
+                            lat_ones.append(latitude)
+                            lon_ones.append(longitude)
                         else:
                             indices_of_ones.append(i)
                             prob_flat_list.append(r.boxes.conf)
+                            lat_ones.append(latitude)
+                            lon_ones.append(longitude)
                         i += 1
 
 
@@ -340,9 +353,9 @@ def main():
                 
 
 
-                # st.write("predictions done!")
-                return indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list
-            indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list=done_before(df,drawn_polygons) 
+      
+                return indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list,lat_ones,lon_ones
+            indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list,lat_ones,lon_ones=done_before(df,drawn_polygons) 
             temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
             # st.write(indices_of_ones,prob_flat_list)
             with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
@@ -465,14 +478,29 @@ def main():
                 ####### Bounding Boxes ########
                 st.write("Bounding Box Predictions!")
                 ind = 0
+                bk_lats = []
+                bk_lons = []
                 for i in indices_of_ones:
                     r = results[i]
                     # st.write(len(r.boxes.cls))
                     annotator = Annotator(image_list[i])
-                    
+                    # image_lat = []
+                    # image_lon = []
                     boxes = r.boxes
+                    x_centers = []
+                    y_centers = []
                     for box in boxes:
-                        
+                        x_c,y_c,w,h = box.xywh[0]
+                        x_c = x_c.item()
+                        y_c = y_c.item()
+                        delta_y = y_c - 640
+                        b_lat = lat_ones[ind] - (0.01/1280)*delta_y
+                        delta_x = x_c - 640
+                        b_lon = lon_ones[ind] + (0.01/1280)*delta_x
+                        bk_lats.append(b_lat)
+                        bk_lons.append(b_lon)
+                        x_centers.append(x_c)
+                        y_centers.append(y_c)
                         b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
                         c = box.cls
                         if c.item() == 1:
@@ -483,6 +511,7 @@ def main():
                         annotator.box_label(b, model.names[int(c)], color=color)
                         # write confidence to right of bounding boxes
                         annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
+                        # annotator.text((b[0]+85, b[1]+85), f"Lat-{b_lat},Lon-{b_lon}")
 
                     img = annotator.result()
                     # st.write(len(results))
@@ -492,14 +521,27 @@ def main():
                     #         st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(list_of_probs[z],2)}")
                     # else:
                     #     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
-                    ind += 1
+                    
                     plt.figure(figsize=(8, 4))
                     plt.imshow(img)
                     plt.axis('off')
                     plt.show()
-                    plt.title(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}")
+                    # plt.scatter(640, 640, c='r', s=40)
+                    # plt.scatter(640, 200, c='g', s=40)
+                    # for i in range(len(x_centers)):
+                    #     plt.scatter(x_centers[i], y_centers[i], c='b', s=40)
+                    plt.title(f"Latitude: {round(lat_ones[ind],2)}, Longitude: {round(lon_ones[ind],2)}")
                     plt.tight_layout()
                     st.pyplot(plt)
+                    ind += 1
+                kml_content = generate_kml_content(bk_lons, bk_lats)
+
+                st.download_button(label =
+                    "Download KML of latitude and longitude of brick kilns",
+                    data = kml_content,
+                    file_name = "points.kml",
+                    mime = 'application/vnd.google-earth.kml+xml'
+                    ) 
                 
                 
                 ############## GradCAM ##############
