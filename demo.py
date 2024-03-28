@@ -324,7 +324,8 @@ def main():
                         longitudes.append(longitude)
                 
                             
-                            
+                        if idx >1:
+                            idx = 0.75
                         longitude += delta_lon
                         my_bar.progress(idx , text=progress_text)
                         idx+=(3/(4*nlat*nlong))
