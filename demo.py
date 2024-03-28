@@ -105,6 +105,19 @@ def generate_kml_content(longs, lats):
     for lon, lat in zip(longs, lats):
         kml.newpoint(name="Brick-kiln", coords=[(lon, lat)])
     return kml.kml()
+def project(lat,long):
+    lat = np.radians(lat)
+    long = np.radians(long)
+    x = (128/np.pi)*(2**17)*(long + np.pi)
+    y = (128/np.pi)*(2**17)*(np.pi - np.log(np.tan(np.pi/4 + lat/2)))
+    return x,y
+def inverse_project(x,y):
+    F  = 128 / np.pi * 2 ** 17
+    lng = (x / F) - np.pi
+    lat = (2 * np.arctan(np.exp(np.pi - y/F)) - np.pi / 2)
+    lng = lng * 180 / np.pi
+    lat = lat * 180 / np.pi
+    return lat, lng
 
 # def imgs_input_fn(images):
 #     img_size = (640, 640)
@@ -241,8 +254,8 @@ def main():
                 lon_1 = drawn_polygons[0][0][1]
                 lat_2 = drawn_polygons[0][1][0]
                 lon_2 = drawn_polygons[0][1][1]
-                delta_lat = 0.01
-                delta_lon = 0.01
+                delta_lat = 0.011
+                delta_lon = 0.013
                 latitude = lat_1
                 longitude = lon_1
                 lat_ones = []
@@ -426,23 +439,23 @@ def main():
           
 
             if n_count_ones!=0:
-                if st.session_state.zoomed_in:
-                    indices_of_ones = np.array(indices_of_ones)
-                    latitudes = np.array(latitudes)
-                    longitudes = np.array(longitudes)
-                    lat_brick_kilns = latitudes[indices_of_ones]
-                    lon_brick_kilns = longitudes[indices_of_ones]
-                    indices_of_ones = indices_of_ones.tolist()
-                    latitudes = latitudes.tolist()
-                    longitudes = longitudes.tolist()
-                    st.session_state.india_map=create_map(13)
-                    bounding_box_polygon.add_to(st.session_state.india_map)
-                    for Idx in range(len(lat_brick_kilns)):
-                        lat = lat_brick_kilns[Idx]
-                        lon = lon_brick_kilns[Idx]
-                        add_locations(lat,lon,st.session_state.india_map)
-                    st.session_state.zoomed_in = False
-                    st.experimental_rerun()
+                # if st.session_state.zoomed_in:
+                #     indices_of_ones = np.array(indices_of_ones)
+                #     latitudes = np.array(latitudes)
+                #     longitudes = np.array(longitudes)
+                #     lat_brick_kilns = latitudes[indices_of_ones]
+                #     lon_brick_kilns = longitudes[indices_of_ones]
+                #     indices_of_ones = indices_of_ones.tolist()
+                #     latitudes = latitudes.tolist()
+                #     longitudes = longitudes.tolist()
+                #     st.session_state.india_map=create_map(13)
+                #     bounding_box_polygon.add_to(st.session_state.india_map)
+                #     for Idx in range(len(lat_brick_kilns)):
+                #         lat = lat_brick_kilns[Idx]
+                #         lon = lon_brick_kilns[Idx]
+                #         add_locations(lat,lon,st.session_state.india_map)
+                #     st.session_state.zoomed_in = False
+                #     st.experimental_rerun()
             
                 # folium_static(india_map)
                 st.markdown("### Download options")
@@ -490,16 +503,18 @@ def main():
                     boxes = r.boxes
                     x_centers = []
                     y_centers = []
+                    # st.write(len(boxes))
                     for box in boxes:
+                        # st.write(box.xywh[0])
                         x_c,y_c,w,h = box.xywh[0]
                         x_c = x_c.item()
                         y_c = y_c.item()
+                        result = project(lat_ones[ind], lon_ones[ind])
                         delta_y = y_c - 640
-                        b_lat = lat_ones[ind] - (0.01/1280)*delta_y
                         delta_x = x_c - 640
-                        b_lon = lon_ones[ind] + (0.01/1280)*delta_x
-                        bk_lats.append(b_lat)
-                        bk_lons.append(b_lon)
+                        lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
+                        bk_lats.append(lat_value)
+                        bk_lons.append(lng_value)
                         x_centers.append(x_c)
                         y_centers.append(y_c)
                         b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
@@ -543,6 +558,23 @@ def main():
                     file_name = "points.kml",
                     mime = 'application/vnd.google-earth.kml+xml'
                     ) 
+                if st.session_state.zoomed_in:
+                    # indices_of_ones = np.array(indices_of_ones)
+                    # latitudes = np.array(latitudes)
+                    # longitudes = np.array(longitudes)
+                    # lat_brick_kilns = lat_ones
+                    # lon_brick_kilns = lon_ones
+                    # indices_of_ones = indices_of_ones.tolist()
+                    # latitudes = latitudes.tolist()
+                    # longitudes = longitudes.tolist()
+                    st.session_state.india_map=create_map(13)
+                    bounding_box_polygon.add_to(st.session_state.india_map)
+                    for Idx in range(len(bk_lats)):
+                        lat = bk_lats[Idx]
+                        lon = bk_lons[Idx]
+                        add_locations(lat,lon,st.session_state.india_map)
+                    st.session_state.zoomed_in = False
+                    st.experimental_rerun()
                 
                 
                 ############## GradCAM ##############
