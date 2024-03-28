@@ -60,10 +60,11 @@ def get_static_map_image(latitude, longitude, api):
     base_url = 'https://maps.googleapis.com/maps/api/staticmap'
     params = {
         'center': f'{latitude},{longitude}',
-        'zoom': 17,  # You can adjust the zoom level as per your requirement
-        'size': '256x276',  # You can adjust the size of the image as per your requirement
+        'zoom': 16,  # You can adjust the zoom level as per your requirement
+        'size': '640x640',  # You can adjust the size of the image as per your requirement
         'maptype': 'satellite',
         'key': api,
+        'scale': 2,
     }
     response = requests.get(base_url, params=params)
     return response.content
@@ -98,61 +99,61 @@ def add_locations(lat,lon,india_map):
 
 
 
-def imgs_input_fn(images):
-    img_size = (640, 640)
-    img_size_tensor = tf.constant(img_size, dtype=tf.int32)
-    images = tf.convert_to_tensor(value = images)
-    images = tf.image.resize(images, size=img_size_tensor)
-    return images
+# def imgs_input_fn(images):
+#     img_size = (640, 640)
+#     img_size_tensor = tf.constant(img_size, dtype=tf.int32)
+#     images = tf.convert_to_tensor(value = images)
+#     images = tf.image.resize(images, size=img_size_tensor)
+#     return images
 
-def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
-    # First, we create a model that maps the input image to the activations
-    # of the last conv layer as well as the output predictions
-    grad_model = keras.models.Model(
-        model.inputs, [model.get_layer(last_conv_layer_name).output, model.output]
-    )
-    # Then, we compute the gradient of the top predicted class for our input image
-    # with respect to the activations of the last conv layer
-    with tf.GradientTape() as tape:
-        last_conv_layer_output, preds = grad_model(img_array)
-        if pred_index is None:
-            pred_index = tf.argmax(preds[0])
-        class_channel = preds[:, pred_index]
+# def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+#     # First, we create a model that maps the input image to the activations
+#     # of the last conv layer as well as the output predictions
+#     grad_model = keras.models.Model(
+#         model.inputs, [model.get_layer(last_conv_layer_name).output, model.output]
+#     )
+#     # Then, we compute the gradient of the top predicted class for our input image
+#     # with respect to the activations of the last conv layer
+#     with tf.GradientTape() as tape:
+#         last_conv_layer_output, preds = grad_model(img_array)
+#         if pred_index is None:
+#             pred_index = tf.argmax(preds[0])
+#         class_channel = preds[:, pred_index]
 
-    # This is the gradient of the output neuron (top predicted or chosen)
-    # with regard to the output feature map of the last conv layer
-    grads = tape.gradient(class_channel, last_conv_layer_output)
+#     # This is the gradient of the output neuron (top predicted or chosen)
+#     # with regard to the output feature map of the last conv layer
+#     grads = tape.gradient(class_channel, last_conv_layer_output)
 
-    # This is a vector where each entry is the mean intensity of the gradient
-    # over a specific feature map channel
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+#     # This is a vector where each entry is the mean intensity of the gradient
+#     # over a specific feature map channel
+#     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
-    # We multiply each channel in the feature map array
-    # by "how important this channel is" with regard to the top predicted class
-    # then sum all the channels to obtain the heatmap class activation
-    last_conv_layer_output = last_conv_layer_output[0]
-    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
+#     # We multiply each channel in the feature map array
+#     # by "how important this channel is" with regard to the top predicted class
+#     # then sum all the channels to obtain the heatmap class activation
+#     last_conv_layer_output = last_conv_layer_output[0]
+#     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+#     heatmap = tf.squeeze(heatmap)
 
-    # For visualization purpose, we will also normalize the heatmap between 0 & 1
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
-    return heatmap.numpy()
+#     # For visualization purpose, we will also normalize the heatmap between 0 & 1
+#     heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+#     return heatmap.numpy()
 
-def save_and_display_gradcam(img_array, heatmap, alpha=0.4):
-    img = img_array
-    heatmap = np.uint8(255 * heatmap)
-    jet = matplotlib.colormaps["jet"]
-    jet_colors = jet(np.arange(256))[:, :3]
-    jet_heatmap = jet_colors[heatmap]
+# def save_and_display_gradcam(img_array, heatmap, alpha=0.4):
+#     img = img_array
+#     heatmap = np.uint8(255 * heatmap)
+#     jet = matplotlib.colormaps["jet"]
+#     jet_colors = jet(np.arange(256))[:, :3]
+#     jet_heatmap = jet_colors[heatmap]
 
-    jet_heatmap = array_to_img(jet_heatmap)
-    jet_heatmap = jet_heatmap.resize((img.shape[1], img.shape[0]))
-    jet_heatmap = img_to_array(jet_heatmap)
+#     jet_heatmap = array_to_img(jet_heatmap)
+#     jet_heatmap = jet_heatmap.resize((img.shape[1], img.shape[0]))
+#     jet_heatmap = img_to_array(jet_heatmap)
 
-    superimposed_img = jet_heatmap * alpha + img
-    superimposed_img = array_to_img(superimposed_img)
+#     superimposed_img = jet_heatmap * alpha + img
+#     superimposed_img = array_to_img(superimposed_img)
 
-    return superimposed_img
+#     return superimposed_img
 
 def main():
 
@@ -233,8 +234,8 @@ def main():
                 lon_1 = drawn_polygons[0][0][1]
                 lat_2 = drawn_polygons[0][1][0]
                 lon_2 = drawn_polygons[0][1][1]
-                delta_lat = 0.003
-                delta_lon = 0.003
+                delta_lat = 0.01
+                delta_lon = 0.01
                 latitude = lat_1
                 longitude = lon_1
                 nlat=0
@@ -291,9 +292,12 @@ def main():
                         r = temp_result[0]
                         if len(r.boxes.cls)==0:
                             indices_of_zeros.append(i)
-                        else:
+                        elif len(r.boxes.cls)==1:
                             indices_of_ones.append(i)
                             prob_flat_list.append(r.boxes.conf.item())
+                        else:
+                            indices_of_ones.append(i)
+                            prob_flat_list.append(r.boxes.conf)
                         i += 1
 
 
@@ -345,12 +349,21 @@ def main():
                 s_no =1
                 index = 0
                 for i in indices_of_ones:
-                    truncated_float = int(prob_flat_list[index] * 100) / 100
-                    temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
-                    s_no+=1
+                    if isinstance(prob_flat_list[index], torch.Tensor):
+                        for z in range(len(prob_flat_list[index])):
+                            truncated_float = int(prob_flat_list[index][z] * 100) / 100
+                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
+                            s_no+=1
+                            # Concatenate the temporary DataFrame with the main DataFrame
+                            df = pd.concat([df, temp_df], ignore_index=True)
+                    else:
+                        truncated_float = int(prob_flat_list[index] * 100) / 100
+                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
+                        s_no+=1
+                        df = pd.concat([df, temp_df], ignore_index=True)
                     index += 1
                     # Concatenate the temporary DataFrame with the main DataFrame
-                    df = pd.concat([df, temp_df], ignore_index=True)
+                    
                 
                     image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
                     image_path = os.path.join(temp_dir1, image_filename)
@@ -466,17 +479,25 @@ def main():
                             color = (0, 0, 255)
                         else:
                             color = (255, 0, 0)
+                        
                         annotator.box_label(b, model.names[int(c)], color=color)
+                        # write confidence to right of bounding boxes
+                        annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
 
                     img = annotator.result()
                     # st.write(len(results))
-                    st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
+                    # if isinstance(prob_flat_list[ind], torch.Tensor):
+                    #     list_of_probs = prob_flat_list[ind].tolist()
+                    #     for z in range(len(list_of_probs)):
+                    #         st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(list_of_probs[z],2)}")
+                    # else:
+                    #     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
                     ind += 1
                     plt.figure(figsize=(8, 4))
                     plt.imshow(img)
                     plt.axis('off')
                     plt.show()
-                    plt.title(f"Bounding Box predictions")
+                    plt.title(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}")
                     plt.tight_layout()
                     st.pyplot(plt)
                 
