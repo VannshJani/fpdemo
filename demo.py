@@ -195,10 +195,10 @@ def main():
     st.title("Brick Kiln Detector")
     st.write("This app uses a deep learning model to detect brick kilns in satellite images. The app allows you to select certain area on a map and download the images of brick kilns and non-brick kilns in that region.")
 
-    st.header("Instructions")
-    st.write("1. Enter the latitude and longitude of the bounding box in the sidebar.\n"
-                 "2. Click on submit and wait for the results to load.\n"
-                 "3. Download the images and CSV file using the download buttons below.")
+    # st.header("Instructions")
+    # st.write("1. Enter the latitude and longitude of the bounding box in the sidebar.\n"
+    #              "2. Click on submit and wait for the results to load.\n"
+    #              "3. Download the images and CSV file using the download buttons below.")
 
 
     if 'india_map' not in st.session_state:
