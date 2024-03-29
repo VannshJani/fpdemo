@@ -610,6 +610,9 @@ def main():
                 # os.remove('images_kiln.zip')
                 # shutil.rmtree(temp_dir2)
                 # os.remove('images_no_kiln.zip')
+                reset = st.button("Reset")
+                if reset:
+                    st.session_state.india_map.location = [mid_lat,mid_lon]
 
                 t=st.toggle("plots")
                 if t:
@@ -729,9 +732,7 @@ def main():
                 #         ax.axis('off')
                 #     plt.tight_layout()
                 #     st.pyplot(fig)
-                reset = st.button("Reset")
-                if reset:
-                    st.session_state.india_map.location = [mid_lat,mid_lon]
+                
             else:
                 st.write("No Brick Kilns detected in the selected region!")
                 # with open('images_no_kiln.zip', 'rb') as zip_file:
