@@ -97,7 +97,7 @@ def create_map(zoom_level,location = [20.5937, 78.9629]):
 
     # Add Mapbox tiles with 'Mapbox Satellite' style
     folium.TileLayer(
-        tiles=f"https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{{z}}/{{x}}/{{y}}?access_token={mapbox_token}",
+        tiles=f"https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{{z}}/{{x}}/{{y}}?access_token={mapbox_token}",
         attr="Mapbox Satellite",
         name="Mapbox Satellite"
     ).add_to(india_map)
@@ -282,6 +282,7 @@ def main():
         folium_static(st.session_state.india_map,width=1400,height=800)
         
         ab = st.secrets["Api_key"]
+  
         
 
 
