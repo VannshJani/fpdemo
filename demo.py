@@ -35,11 +35,20 @@ if 'zoomed_in' not in st.session_state:
     st.session_state.zoomed_in=True
 if 'num_bk' not in st.session_state:
     st.session_state.num_bk = 0
+if 'box_lat1' not in st.session_state:
+    st.session_state.box_lat1 = 26.42
+if 'box_lon1' not in st.session_state:
+    st.session_state.box_lon1 = 79.57
+if 'box_lat2' not in st.session_state:
+    st.session_state.box_lat2 = 26.39
+if 'box_lon2' not in st.session_state:
+    st.session_state.box_lon2 = 79.59
 def callback():
     st.session_state.button1=True
 def callback_map():
     st.session_state.button1=False
-    st.session_state.india_map = create_map(5)
+    st.session_state.india_map = create_map(12)
+    st.session_state.india_map.location = [(st.session_state.box_lat1+st.session_state.box_lat2)/2,(st.session_state.box_lon1+st.session_state.box_lon2)/2]
     st.session_state.zoomed_in=True
     st.session_state.num_bk = 0    
 
@@ -212,10 +221,8 @@ def main():
     # st.write("1. Enter the latitude and longitude of the bounding box in the sidebar.\n"
     #              "2. Click on submit and wait for the results to load.\n"
     #              "3. Download the images and CSV file using the download buttons below.")
-
-
-    if 'india_map' not in st.session_state:
-        st.session_state.india_map = create_map(5)
+    
+    
 
 
     # Initialize variables to store user-drawn polygons
@@ -225,18 +232,24 @@ def main():
     st.header("Bounding Box")
     col1, col2, col3,col4 = st.columns(4)
     with col1:
-        box_lat1 = st.number_input("Lat of top-left corner:", value=26.42, step=0.01,format='%f',on_change=callback_map)
+        st.session_state.box_lat1 = st.number_input("Lat of top-left corner:", value=26.42, step=0.01,format='%f',on_change=callback_map)
     with col2:
-        box_lon1 = st.number_input("Lon of top-left corner:", value=79.57, step=0.01,on_change=callback_map)
+        st.session_state.box_lon1 = st.number_input("Lon of top-left corner:", value=79.57, step=0.01,on_change=callback_map)
     with col3:
-        box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.39, step=0.01,on_change=callback_map)
+        st.session_state.box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.39, step=0.01,on_change=callback_map)
     with col4:
-        box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.59, step=0.01,on_change=callback_map)
-    area = np.abs(box_lat2-box_lat1)*np.abs(box_lon2-box_lon1)
+        st.session_state.box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.59, step=0.01,on_change=callback_map)
+    area = np.abs(st.session_state.box_lat2-st.session_state.box_lat1)*np.abs(st.session_state.box_lon2-st.session_state.box_lon1)
     area = round(area,5)
     st.write(f"Area of the bounding box is {area} sq units.")
+    mid_lat = (st.session_state.box_lat1+st.session_state.box_lat2)/2
+    mid_lon = (st.session_state.box_lon1+st.session_state.box_lon2)/2
+    if 'india_map' not in st.session_state:
+        st.session_state.india_map = create_map(12)
+        st.session_state.india_map.location = [mid_lat,mid_lon]
 
     if area<=0.005:
+        submit_button = st.button("Submit",on_click=callback)
         
         # new_box_lat1,new_box_lon1 = get_new_coords(box_lat1,box_lon1,"left")
         # new_box_lat2,new_box_lon2 = get_new_coords(box_lat2,box_lon2,"right")
@@ -246,7 +259,7 @@ def main():
         # box_lon2 = new_box_lon2
         # Add the rectangular bounding box to the map
         bounding_box_polygon = folium.Rectangle(
-            bounds=[[box_lat2, box_lon2], [box_lat1, box_lon1]],
+            bounds=[[st.session_state.box_lat2, st.session_state.box_lon2], [st.session_state.box_lat1, st.session_state.box_lon1]],
             color='red',
             fill=True,
             fill_opacity=0,
@@ -266,7 +279,7 @@ def main():
         
 
 
-        if ab and (st.button("Submit",on_click=callback) or st.session_state.button1):
+        if ab and (submit_button or st.session_state.button1):
             @st.cache_resource(show_spinner = False)
             def done_before(df,drawn_polygons):
                 st.session_state.ab = ab
@@ -281,21 +294,21 @@ def main():
                 
                 delta_lat = 0.011
                 delta_lon = 0.013
-                latitude = box_lat2
-                longitude = box_lon1
+                latitude = st.session_state.box_lat2
+                longitude = st.session_state.box_lon1
                 lat_ones = []
                 lon_ones = []
                 nlat=0
                 nlong=0
-                while latitude<=box_lat1:
+                while latitude<=st.session_state.box_lat1:
                     nlat+=1
                     latitude+=delta_lat
 
-                while longitude<=box_lon2:
+                while longitude<=st.session_state.box_lon2:
                     nlong+=1
                     longitude+=delta_lon
-                latitude=box_lat2
-                longitude=box_lon1
+                latitude=st.session_state.box_lat2
+                longitude=st.session_state.box_lon1
 
                 progress_text = 'Please wait while we process your request...'
                 my_bar = st.progress(0, text=progress_text)
@@ -306,8 +319,8 @@ def main():
                 prob_flat_list = []
                 results = []
                 i=0
-                while round(latitude,2)<=box_lat1:
-                    while round(longitude,2)<=box_lon2:
+                while round(latitude,2)<=st.session_state.box_lat1:
+                    while round(longitude,2)<=st.session_state.box_lon2:
                         image_data = get_static_map_image(latitude, longitude, ab)
                         image = Image.open(io.BytesIO(image_data))
                         # st.write(latitude,longitude)
@@ -372,7 +385,7 @@ def main():
                             
                         
                     latitude += delta_lat
-                    longitude = box_lon1
+                    longitude = st.session_state.box_lon1
                 
                     
 
@@ -443,8 +456,11 @@ def main():
             #         zipf.write(image_path, arcname=image_filename)
                         
         
-            mid_lat = (box_lat1+box_lat2)/2
-            mid_lon = (box_lon1+box_lon2)/2
+            mid_lat = (st.session_state.box_lat1+st.session_state.box_lat2)/2
+            mid_lon = (st.session_state.box_lon1+st.session_state.box_lon2)/2
+            reset = st.button("Reset view")
+            if reset:
+                st.session_state.india_map.location = [mid_lat,mid_lon]
                     
 
             count_ones = []
@@ -496,7 +512,7 @@ def main():
             # st.write(n_count_ones)
             n_counts_ones_mod = n_count_ones
             for i in range(len(bk_lats)):
-                if bk_lats[i]>=box_lat2 and bk_lats[i]<=box_lat1 and bk_lons[i]>=box_lon1 and bk_lons[i]<=box_lon2:
+                if bk_lats[i]>=st.session_state.box_lat2 and bk_lats[i]<=st.session_state.box_lat1 and bk_lons[i]>=st.session_state.box_lon1 and bk_lons[i]<=st.session_state.box_lon2:
                     new_lats.append(bk_lats[i])
                     new_lons.append(bk_lons[i])
                     conf_new.append(conf_list[i])
@@ -557,14 +573,14 @@ def main():
                     # latitudes = latitudes.tolist()
                     # longitudes = longitudes.tolist()
                     # num_bk = 0
-                    mid_lat = (box_lat1+box_lat2)/2
-                    mid_lon = (box_lon1+box_lon2)/2
+                    # mid_lat = (box_lat1+box_lat2)/2
+                    # mid_lon = (box_lon1+box_lon2)/2
                     st.session_state.india_map=create_map(14,location = [mid_lat,mid_lon])
                     bounding_box_polygon.add_to(st.session_state.india_map)
                     for Idx in range(len(bk_lats)):
                         lat = bk_lats[Idx]
                         lon = bk_lons[Idx]
-                        if lat>=box_lat2 and lat<=box_lat1 and lon>=box_lon1 and lon<=box_lon2:
+                        if lat>=st.session_state.box_lat2 and lat<=st.session_state.box_lat1 and lon>=st.session_state.box_lon1 and lon<=st.session_state.box_lon2:
                             # continue
                             # st.write(lat,lon)
                             st.session_state.num_bk += 1
@@ -610,9 +626,7 @@ def main():
                 # os.remove('images_kiln.zip')
                 # shutil.rmtree(temp_dir2)
                 # os.remove('images_no_kiln.zip')
-                reset = st.button("Reset")
-                if reset:
-                    st.session_state.india_map.location = [mid_lat,mid_lon]
+                
 
                 t=st.toggle("plots")
                 if t:
