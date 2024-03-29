@@ -26,28 +26,31 @@ import matplotlib.pyplot as plt
 import simplekml
 
 
-
+st.set_page_config(layout="wide")
 
 # url = 'https://drive.google.com/uc?id=1DBl_LcIC3-a09bgGqRPAsQsLCbl9ZPJX'
 if 'button1' not in st.session_state:
     st.session_state.button1=False
 if 'zoomed_in' not in st.session_state:
     st.session_state.zoomed_in=True
+if 'num_bk' not in st.session_state:
+    st.session_state.num_bk = 0
 def callback():
     st.session_state.button1=True
 def callback_map():
     st.session_state.button1=False
     st.session_state.india_map = create_map(5)
-    st.session_state.zoomed_in=True    
+    st.session_state.zoomed_in=True
+    st.session_state.num_bk = 0    
 
-@st.cache_resource(show_spinner = False)
-def download_model():
-    url = 'https://drive.google.com/uc?id=17Km_2jHSixQOrq5gqOB0RoaaeQdpNEHm'
-    output = 'weights.pt'
-    gdown.download(url, output, quiet=True)
+# @st.cache_resource(show_spinner = False)
+# def download_model():
+#     url = 'https://drive.google.com/uc?id=17Km_2jHSixQOrq5gqOB0RoaaeQdpNEHm'
+#     output = 'weights.pt'
+#     gdown.download(url, output, quiet=True)
     # st.write("Downloaded successfully")
 # download_model()
-@st.cache_resource()
+@st.cache_resource(show_spinner=False)
 def load_model():
     model_path = hf_hub_download(repo_id="Vannsh/yolov8", filename="yolov8m_best.pt")
     model = YOLO(model_path, task="detect")
@@ -72,11 +75,14 @@ def get_static_map_image(latitude, longitude, api):
     response = requests.get(base_url, params=params)
     return response.content
 
-def create_map(zoom_level):
+def create_map(zoom_level,location = [20.5937, 78.9629]):
     india_map = folium.Map(
-        location=[20.5937, 78.9629],
+        location=location,
+        # location = [26.4,79.58],
         zoom_start=zoom_level,
-        control_scale=True
+        control_scale=True,
+        width = 1400,
+        height = 900
     )
 
     # Add Mapbox tiles with 'Mapbox Satellite' style
@@ -118,6 +124,13 @@ def inverse_project(x,y):
     lng = lng * 180 / np.pi
     lat = lat * 180 / np.pi
     return lat, lng
+# def get_new_coords(lat,long,shift):
+#     x,y = project(lat,long)
+#     if shift=="left":
+#         return inverse_project(x-640,y+640)
+#     else:
+#         return inverse_project(x+640,y-640)
+
 
 # def imgs_input_fn(images):
 #     img_size = (640, 640)
@@ -209,24 +222,34 @@ def main():
     drawn_polygons = []
 
     # Specify the latitude and longitude for the rectangular bounding box
-    st.sidebar.title("Bounding Box")
-    
-    box_lat1 = st.sidebar.number_input("Latitude of Bottom-left corner:", value=26.39, step=0.01,on_change=callback_map)
-    box_lon1 = st.sidebar.number_input("Longitude of Bottom-Left corner:", value=79.57, step=0.01,on_change=callback_map)
-    box_lat2 = st.sidebar.number_input("Latitude of Top-Right corner:", value=26.42, step=0.01,on_change=callback_map)
-    box_lon2 = st.sidebar.number_input("Longitude of Top-Right corner:", value=79.59, step=0.01,on_change=callback_map)
+    st.header("Bounding Box")
+    col1, col2, col3,col4 = st.columns(4)
+    with col1:
+        box_lat1 = st.number_input("Lat of top-left corner:", value=26.42, step=0.01,format='%f',on_change=callback_map)
+    with col2:
+        box_lon1 = st.number_input("Lon of top-left corner:", value=79.57, step=0.01,on_change=callback_map)
+    with col3:
+        box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.39, step=0.01,on_change=callback_map)
+    with col4:
+        box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.59, step=0.01,on_change=callback_map)
     area = np.abs(box_lat2-box_lat1)*np.abs(box_lon2-box_lon1)
     area = round(area,5)
-    st.sidebar.write(f"Area of the bounding box is {area} sq units.")
+    st.write(f"Area of the bounding box is {area} sq units.")
 
     if area<=0.005:
-
+        
+        # new_box_lat1,new_box_lon1 = get_new_coords(box_lat1,box_lon1,"left")
+        # new_box_lat2,new_box_lon2 = get_new_coords(box_lat2,box_lon2,"right")
+        # box_lat1 = new_box_lat1
+        # box_lon1 = new_box_lon1
+        # box_lat2 = new_box_lat2
+        # box_lon2 = new_box_lon2
         # Add the rectangular bounding box to the map
         bounding_box_polygon = folium.Rectangle(
-            bounds=[[box_lat1, box_lon1], [box_lat2, box_lon2]],
+            bounds=[[box_lat2, box_lon2], [box_lat1, box_lon1]],
             color='red',
             fill=True,
-            fill_opacity=0.2,
+            fill_opacity=0,
         )
         bounding_box_polygon.add_to(st.session_state.india_map)
         drawn_polygons.append(bounding_box_polygon.get_bounds())
@@ -235,14 +258,15 @@ def main():
 
         
         # Display the map as an image using st.image()
-        folium_static(st.session_state.india_map)
+        # folium_static(world_map, width=1500, height=800)
+        folium_static(st.session_state.india_map,width=1400,height=800)
         
         ab = st.secrets["Api_key"]
         # ab = "AIzaSyB_CahkW9gvtj3QN6FBvu58c9KNyXsaS94"
         
 
 
-        if ab and (st.sidebar.button("Submit",on_click=callback) or st.session_state.button1):
+        if ab and (st.button("Submit",on_click=callback) or st.session_state.button1):
             @st.cache_resource(show_spinner = False)
             def done_before(df,drawn_polygons):
                 st.session_state.ab = ab
@@ -250,27 +274,28 @@ def main():
                 latitudes = []
                 longitudes = []
                 idx = 0
-                lat_1 = drawn_polygons[0][0][0]
-                lon_1 = drawn_polygons[0][0][1]
-                lat_2 = drawn_polygons[0][1][0]
-                lon_2 = drawn_polygons[0][1][1]
+                # lat_1 = drawn_polygons[0][0][0]
+                # lon_1 = drawn_polygons[0][0][1]
+                # lat_2 = drawn_polygons[0][1][0]
+                # lon_2 = drawn_polygons[0][1][1]
+                
                 delta_lat = 0.011
                 delta_lon = 0.013
-                latitude = lat_1
-                longitude = lon_1
+                latitude = box_lat2
+                longitude = box_lon1
                 lat_ones = []
                 lon_ones = []
                 nlat=0
                 nlong=0
-                while latitude<=lat_2:
+                while latitude<=box_lat1:
                     nlat+=1
                     latitude+=delta_lat
 
-                while longitude<=lon_2:
+                while longitude<=box_lon2:
                     nlong+=1
                     longitude+=delta_lon
-                latitude=lat_1
-                longitude=lon_1
+                latitude=box_lat2
+                longitude=box_lon1
 
                 progress_text = 'Please wait while we process your request...'
                 my_bar = st.progress(0, text=progress_text)
@@ -281,8 +306,8 @@ def main():
                 prob_flat_list = []
                 results = []
                 i=0
-                while round(latitude,2)<=lat_2:
-                    while round(longitude,2)<=lon_2:
+                while round(latitude,2)<=box_lat1:
+                    while round(longitude,2)<=box_lon2:
                         image_data = get_static_map_image(latitude, longitude, ab)
                         image = Image.open(io.BytesIO(image_data))
                         # st.write(latitude,longitude)
@@ -341,13 +366,13 @@ def main():
                             idx = 0.95
                         longitude += delta_lon
                         my_bar.progress(idx , text=progress_text)
-                        idx+=(3/(5*nlat*nlong))
+                        idx+=(3/(4*nlat*nlong))
                 
                         
                             
                         
                     latitude += delta_lat
-                    longitude = lon_1
+                    longitude = box_lon1
                 
                     
 
@@ -370,52 +395,51 @@ def main():
       
                 return indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list,lat_ones,lon_ones
             indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list,lat_ones,lon_ones=done_before(df,drawn_polygons) 
-            temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
+            # temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
             # st.write(indices_of_ones,prob_flat_list)
-            with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
-                s_no =1
-                index = 0
-                for i in indices_of_ones:
-                    if isinstance(prob_flat_list[index], torch.Tensor):
-                        for z in range(len(prob_flat_list[index])):
-                            truncated_float = int(prob_flat_list[index][z] * 100) / 100
-                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
-                            s_no+=1
-                            # Concatenate the temporary DataFrame with the main DataFrame
-                            df = pd.concat([df, temp_df], ignore_index=True)
-                    else:
-                        truncated_float = int(prob_flat_list[index] * 100) / 100
-                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
-                        s_no+=1
-                        df = pd.concat([df, temp_df], ignore_index=True)
-                    index += 1
+
+            # s_no =1
+            # index = 0
+            # for i in indices_of_ones:
+            #     if isinstance(prob_flat_list[index], torch.Tensor):
+            #         for z in range(len(prob_flat_list[index])):
+            #             truncated_float = int(prob_flat_list[index][z] * 100) / 100
+            #             temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
+            #             s_no+=1
+            #             # Concatenate the temporary DataFrame with the main DataFrame
+            #             df = pd.concat([df, temp_df], ignore_index=True)
+            #     else:
+            #         truncated_float = int(prob_flat_list[index] * 100) / 100
+            #         temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(latitudes[i],2)], 'Longitude': [round(longitudes[i],2)],'Confidence':[truncated_float]})
+            #         s_no+=1
+            #         df = pd.concat([df, temp_df], ignore_index=True)
+            #     index += 1
                     # Concatenate the temporary DataFrame with the main DataFrame
                     
                 
-                    image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
-                    image_path = os.path.join(temp_dir1, image_filename)
+                    # image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
+                    # image_path = os.path.join(temp_dir1, image_filename)
 
-                    pil_image = image_list[i]
+                    # pil_image = image_list[i]
 
-                    pil_image.save(image_path, format='PNG')
-                    zipf.write(image_path, arcname=image_filename)
+                    # pil_image.save(image_path, format='PNG')
+                    # zipf.write(image_path, arcname=image_filename)
                         
                 
             
-            temp_dir2 = tempfile.mkdtemp()  # Create a temporary directory to store the images
+            # temp_dir2 = tempfile.mkdtemp()  # Create a temporary directory to store the images
                 
-            with zipfile.ZipFile('images_no_kiln.zip', 'w') as zipf:
-                for i in indices_of_zeros:
-                    image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
-                    image_path = os.path.join(temp_dir2, image_filename)
+            # with zipfile.ZipFile('images_no_kiln.zip', 'w') as zipf:
+            #     for i in indices_of_zeros:
+            #         image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
+            #         image_path = os.path.join(temp_dir2, image_filename)
 
-                    pil_image = image_list[i]
+            #         pil_image = image_list[i]
 
-                    pil_image.save(image_path, format='PNG')
-                    zipf.write(image_path, arcname=image_filename)
+            #         pil_image.save(image_path, format='PNG')
+            #         zipf.write(image_path, arcname=image_filename)
                         
         
-            csv = df.to_csv(index=False).encode('utf-8')
                 
                     
 
@@ -434,130 +458,91 @@ def main():
             time.sleep(1)
             my_bar.empty()        
 
-            st.write("The number of brick kilns in the selected region is: ", n_count_ones)
-            st.write("The number of non-brick kilns in the selected region is: ", n_count_zeros)
-          
-
-            if n_count_ones!=0:
-                # if st.session_state.zoomed_in:
-                #     indices_of_ones = np.array(indices_of_ones)
-                #     latitudes = np.array(latitudes)
-                #     longitudes = np.array(longitudes)
-                #     lat_brick_kilns = latitudes[indices_of_ones]
-                #     lon_brick_kilns = longitudes[indices_of_ones]
-                #     indices_of_ones = indices_of_ones.tolist()
-                #     latitudes = latitudes.tolist()
-                #     longitudes = longitudes.tolist()
-                #     st.session_state.india_map=create_map(13)
-                #     bounding_box_polygon.add_to(st.session_state.india_map)
-                #     for Idx in range(len(lat_brick_kilns)):
-                #         lat = lat_brick_kilns[Idx]
-                #         lon = lon_brick_kilns[Idx]
-                #         add_locations(lat,lon,st.session_state.india_map)
-                #     st.session_state.zoomed_in = False
-                #     st.experimental_rerun()
             
-                # folium_static(india_map)
-                st.markdown("### Download options")
-                with open('images_kiln.zip', 'rb') as zip_file:
-                    zip_data = zip_file.read()
-                st.download_button(
-                    label="Download Kiln Images",
-                    data=zip_data,
-                    file_name='images_kiln.zip',
-                    mime="application/zip"
-                )
-                with open('images_no_kiln.zip', 'rb') as zip_file:
-                    zip_data = zip_file.read()
-                st.download_button(
-                    label="Download Non-Kiln Images",
-                    data=zip_data,
-                    file_name='images_no_kiln.zip',
-                    mime="application/zip"
-                )
-                st.download_button(label =
-                    "Download CSV of latitude and longitude of brick kilns",
-                    data = csv,
-                    file_name = "lat_long.csv",
-                    mime = "text/csv"
-                    ) 
+            # st.write("The number of non-brick kilns in the selected region is: ", n_count_zeros)
+            bk_lats = []
+            bk_lons = []
+            new_lats = []
+            new_lons = []
+            conf_list = []
+            conf_new = []
+            class_list = []
+            class_new = []
+            n_zig = 0
+            n_fcbk = 0
+            dictionary = {}
+            ind = 0
+            for i in indices_of_ones:
+                r = results[i]
+                boxes = r.boxes
+                for box in boxes:
+                    x_c,y_c,w,h = box.xywh[0]
+                    x_c = x_c.item()
+                    y_c = y_c.item()
+                    result = project(lat_ones[ind], lon_ones[ind])
+                    delta_y = y_c - 640
+                    delta_x = x_c - 640
+                    lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
+                    bk_lats.append(lat_value)
+                    bk_lons.append(lng_value)
+                    conf_list.append(box.conf)
+                    class_list.append(box.cls)
+                ind += 1
+            # st.write(len(bk_lats),len(bk_lons))
+            # st.write(n_count_ones)
+            n_counts_ones_mod = n_count_ones
+            for i in range(len(bk_lats)):
+                if bk_lats[i]>=box_lat2 and bk_lats[i]<=box_lat1 and bk_lons[i]>=box_lon1 and bk_lons[i]<=box_lon2:
+                    new_lats.append(bk_lats[i])
+                    new_lons.append(bk_lons[i])
+                    conf_new.append(conf_list[i])
+                    class_new.append(class_list[i])
+                    continue
+                else:
+                    n_counts_ones_mod -= 1
+            # st.write(n_counts_ones_mod)
+            if n_counts_ones_mod!=0:
 
-                # Cleanup: Remove the temporary directory and zip file
-                shutil.rmtree(temp_dir1)
-                os.remove('images_kiln.zip')
-                shutil.rmtree(temp_dir2)
-                os.remove('images_no_kiln.zip')
-
-
-                ####### Bounding Boxes ########
-                st.write("Bounding Box Predictions!")
-                ind = 0
-                bk_lats = []
-                bk_lons = []
-                for i in indices_of_ones:
-                    r = results[i]
-                    # st.write(len(r.boxes.cls))
-                    annotator = Annotator(image_list[i])
-                    # image_lat = []
-                    # image_lon = []
-                    boxes = r.boxes
-                    x_centers = []
-                    y_centers = []
-                    # st.write(len(boxes))
-                    for box in boxes:
-                        # st.write(box.xywh[0])
-                        x_c,y_c,w,h = box.xywh[0]
-                        x_c = x_c.item()
-                        y_c = y_c.item()
-                        result = project(lat_ones[ind], lon_ones[ind])
-                        delta_y = y_c - 640
-                        delta_x = x_c - 640
-                        lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
-                        bk_lats.append(lat_value)
-                        bk_lons.append(lng_value)
-                        x_centers.append(x_c)
-                        y_centers.append(y_c)
-                        b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
-                        c = box.cls
-                        if c.item() == 1:
-                            color = (0, 0, 255)
+                for i in range(len(class_new)):
+                    if len(class_new[i])==1:
+                        if class_new[i].item()==0:
+                            n_zig += 1
                         else:
-                            color = (255, 0, 0)
-                        
-                        annotator.box_label(b, model.names[int(c)], color=color)
-                        # write confidence to right of bounding boxes
-                        annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
-                        # annotator.text((b[0]+85, b[1]+85), f"Lat-{b_lat},Lon-{b_lon}")
+                            n_fcbk += 1
+                    else:
+                        for j in range(len(class_new[i])):
+                            if class_new[i][j].item()==0:
+                                n_zig += 1
+                            else:
+                                n_fcbk += 1
 
-                    img = annotator.result()
-                    # st.write(len(results))
-                    # if isinstance(prob_flat_list[ind], torch.Tensor):
-                    #     list_of_probs = prob_flat_list[ind].tolist()
-                    #     for z in range(len(list_of_probs)):
-                    #         st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(list_of_probs[z],2)}")
-                    # else:
-                    #     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
-                    
-                    plt.figure(figsize=(8, 4))
-                    plt.imshow(img)
-                    plt.axis('off')
-                    plt.show()
-                    # plt.scatter(640, 640, c='r', s=40)
-                    # plt.scatter(640, 200, c='g', s=40)
-                    # for i in range(len(x_centers)):
-                    #     plt.scatter(x_centers[i], y_centers[i], c='b', s=40)
-                    plt.title(f"Latitude: {round(lat_ones[ind],2)}, Longitude: {round(lon_ones[ind],2)}")
-                    plt.tight_layout()
-                    st.pyplot(plt)
-                    ind += 1
-                kml_content = generate_kml_content(bk_lons, bk_lats)
+                dictionary["ZIGZAG"] = n_zig
+                dictionary["FCBK"] = n_fcbk
+                dictionary["Total"] = n_zig+n_fcbk
+                df2 = pd.DataFrame(dictionary,index=[0])
+                df2 = df2.T
+                df2.columns = ['Count']
+                # middle align df2 to be at center of page
 
-                st.download_button(label =
-                    "Download KML of latitude and longitude of brick kilns",
-                    data = kml_content,
-                    file_name = "points.kml",
-                    mime = 'application/vnd.google-earth.kml+xml'
-                    ) 
+                st.write(df2,use_container_width=True)
+                s_no =1
+                indexs = 0
+                # st.write(len(new_lats),len(conf_new))
+                for i in range(len(new_lats)):
+                    if isinstance(conf_new[indexs], torch.Tensor):
+                        for z in range(len(conf_new[indexs])):
+                            truncated_float = int(conf_new[indexs][z] * 100) / 100
+                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(new_lats[i],2)], 'Longitude': [round(new_lons[i],2)],'Confidence':[truncated_float]})
+                            s_no+=1
+                            # Concatenate the temporary DataFrame with the main DataFrame
+                            df = pd.concat([df, temp_df], ignore_index=True)
+                    else:
+                        truncated_float = int(conf_new[indexs] * 100) / 100
+                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(new_lats[i],2)], 'Longitude': [round(new_lons[i],2)],'Confidence':[truncated_float]})
+                        s_no+=1
+                        df = pd.concat([df, temp_df], ignore_index=True)
+                    indexs += 1
+                csv = df.to_csv(index=False).encode('utf-8')
                 if st.session_state.zoomed_in:
                     # indices_of_ones = np.array(indices_of_ones)
                     # latitudes = np.array(latitudes)
@@ -567,14 +552,142 @@ def main():
                     # indices_of_ones = indices_of_ones.tolist()
                     # latitudes = latitudes.tolist()
                     # longitudes = longitudes.tolist()
-                    st.session_state.india_map=create_map(13)
+                    # num_bk = 0
+                    mid_lat = (box_lat1+box_lat2)/2
+                    mid_lon = (box_lon1+box_lon2)/2
+                    st.session_state.india_map=create_map(14,location = [mid_lat,mid_lon])
                     bounding_box_polygon.add_to(st.session_state.india_map)
                     for Idx in range(len(bk_lats)):
                         lat = bk_lats[Idx]
                         lon = bk_lons[Idx]
-                        add_locations(lat,lon,st.session_state.india_map)
+                        if lat>=box_lat2 and lat<=box_lat1 and lon>=box_lon1 and lon<=box_lon2:
+                            # continue
+                            # st.write(lat,lon)
+                            st.session_state.num_bk += 1
+                            add_locations(lat,lon,st.session_state.india_map)
                     st.session_state.zoomed_in = False
                     st.experimental_rerun()
+                # st.write("The number of brick kilns in the selected region is: ", st.session_state.num_bk)
+                # folium_static(india_map)
+                st.markdown("### Download options")
+                # with open('images_kiln.zip', 'rb') as zip_file:
+                #     zip_data = zip_file.read()
+                # st.download_button(
+                #     label="Download Kiln Images",
+                #     data=zip_data,
+                #     file_name='images_kiln.zip',
+                #     mime="application/zip"
+                # )
+                # with open('images_no_kiln.zip', 'rb') as zip_file:
+                #     zip_data = zip_file.read()
+                # st.download_button(
+                #     label="Download Non-Kiln Images",
+                #     data=zip_data,
+                #     file_name='images_no_kiln.zip',
+                #     mime="application/zip"
+                # )
+                st.download_button(label =
+                    "Download CSV of latitude and longitude of brick kilns",
+                    data = csv,
+                    file_name = "lat_long.csv",
+                    mime = "text/csv"
+                    ) 
+                kml_content = generate_kml_content(new_lons, new_lats)
+
+                st.download_button(label =
+                    "Download KML of latitude and longitude of brick kilns",
+                    data = kml_content,
+                    file_name = "points.kml",
+                    mime = 'application/vnd.google-earth.kml+xml'
+                    ) 
+
+                # Cleanup: Remove the temporary directory and zip file
+                # shutil.rmtree(temp_dir1)
+                # os.remove('images_kiln.zip')
+                # shutil.rmtree(temp_dir2)
+                # os.remove('images_no_kiln.zip')
+
+                t=st.toggle("plots")
+                if t:
+                    ####### Bounding Boxes ########
+                    st.write("Bounding Box Predictions!")
+                    ind = 0
+                    bk_lats = []
+                    bk_lons = []
+                    for i in indices_of_ones:
+                        r = results[i]
+                        # st.write(len(r.boxes.cls))
+                        annotator = Annotator(image_list[i])
+                        # image_lat = []
+                        # image_lon = []
+                        boxes = r.boxes
+                        x_centers = []
+                        y_centers = []
+                        # st.write(len(boxes))
+                        for box in boxes:
+                            # st.write(box.xywh[0])
+                            x_c,y_c,w,h = box.xywh[0]
+                            x_c = x_c.item()
+                            y_c = y_c.item()
+                            result = project(lat_ones[ind], lon_ones[ind])
+                            delta_y = y_c - 640
+                            delta_x = x_c - 640
+                            lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
+                            bk_lats.append(lat_value)
+                            bk_lons.append(lng_value)
+                            x_centers.append(x_c)
+                            y_centers.append(y_c)
+                            b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
+                            c = box.cls
+                            if c.item() == 1:
+                                color = (0, 0, 255)
+                            else:
+                                color = (255, 0, 0)
+                            
+                            annotator.box_label(b, model.names[int(c)], color=color)
+                            # write confidence to right of bounding boxes
+                            annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
+                            # annotator.text((b[0]+85, b[1]+85), f"Lat-{b_lat},Lon-{b_lon}")
+
+                        img = annotator.result()
+                        # st.write(len(results))
+                        # if isinstance(prob_flat_list[ind], torch.Tensor):
+                        #     list_of_probs = prob_flat_list[ind].tolist()
+                        #     for z in range(len(list_of_probs)):
+                        #         st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(list_of_probs[z],2)}")
+                        # else:
+                        #     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
+                        
+                        plt.figure(figsize=(8, 4))
+                        plt.imshow(img)
+                        plt.axis('off')
+                        plt.show()
+                        # plt.scatter(640, 640, c='r', s=40)
+                        # plt.scatter(640, 200, c='g', s=40)
+                        # for i in range(len(x_centers)):
+                        #     plt.scatter(x_centers[i], y_centers[i], c='b', s=40)
+                        plt.title(f"Latitude: {round(lat_ones[ind],2)}, Longitude: {round(lon_ones[ind],2)}")
+                        plt.tight_layout()
+                        st.pyplot(plt)
+                        ind += 1
+                
+                # if st.session_state.zoomed_in:
+                #     # indices_of_ones = np.array(indices_of_ones)
+                #     # latitudes = np.array(latitudes)
+                #     # longitudes = np.array(longitudes)
+                #     # lat_brick_kilns = lat_ones
+                #     # lon_brick_kilns = lon_ones
+                #     # indices_of_ones = indices_of_ones.tolist()
+                #     # latitudes = latitudes.tolist()
+                #     # longitudes = longitudes.tolist()
+                #     st.session_state.india_map=create_map(13)
+                #     bounding_box_polygon.add_to(st.session_state.india_map)
+                #     for Idx in range(len(bk_lats)):
+                #         lat = bk_lats[Idx]
+                #         lon = bk_lons[Idx]
+                #         add_locations(lat,lon,st.session_state.india_map)
+                #     st.session_state.zoomed_in = False
+                #     st.experimental_rerun()
                 
                 
                 ############## GradCAM ##############
@@ -613,21 +726,21 @@ def main():
                 #     plt.tight_layout()
                 #     st.pyplot(fig)
             else:
-                st.markdown("### Download options")
-                with open('images_no_kiln.zip', 'rb') as zip_file:
-                    zip_data = zip_file.read()
-                st.download_button(
-                    label="Download Non-Kiln Images",
-                    data=zip_data,
-                    file_name='images_no_kiln.zip',
-                    mime="application/zip"
-                )
-                shutil.rmtree(temp_dir2)
-                os.remove('images_no_kiln.zip')
+                st.write("No Brick Kilns detected in the selected region!")
+                # with open('images_no_kiln.zip', 'rb') as zip_file:
+                #     zip_data = zip_file.read()
+                # st.download_button(
+                #     label="Download Non-Kiln Images",
+                #     data=zip_data,
+                #     file_name='images_no_kiln.zip',
+                #     mime="application/zip"
+                # )
+                # shutil.rmtree(temp_dir2)
+                # os.remove('images_no_kiln.zip')
 
     else:
         st.write(":red[The bounding box area is too big. The area should be less than or equal to 0.005 sq units]")
-        st.sidebar.write(":red[The bounding box area is too big. The area should be less than or equal to 0.005 sq units]")
+   
 
 
     
