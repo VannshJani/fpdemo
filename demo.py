@@ -281,8 +281,7 @@ def main():
         # folium_static(world_map, width=1500, height=800)
         folium_static(st.session_state.india_map,width=1400,height=800)
         
-        # ab = st.secrets["Api_key"]
-        ab = "AIzaSyB_CahkW9gvtj3QN6FBvu58c9KNyXsaS94"
+        ab = st.secrets["Api_key"]
         
 
 
