@@ -50,7 +50,8 @@ def callback_map():
     st.session_state.india_map = create_map(12)
     st.session_state.india_map.location = [(st.session_state.box_lat1+st.session_state.box_lat2)/2,(st.session_state.box_lon1+st.session_state.box_lon2)/2]
     st.session_state.zoomed_in=True
-    st.session_state.num_bk = 0    
+    st.session_state.num_bk = 0 
+
 
 # @st.cache_resource(show_spinner = False)
 # def download_model():
@@ -231,6 +232,10 @@ def main():
     # Specify the latitude and longitude for the rectangular bounding box
     st.header("Bounding Box")
     col1, col2, col3,col4 = st.columns(4)
+    prev_lat1 = st.session_state.box_lat1
+    prev_lat2 = st.session_state.box_lat2
+    prev_lon1 = st.session_state.box_lon1
+    prev_lon2 = st.session_state.box_lon2
     with col1:
         st.session_state.box_lat1 = st.number_input("Lat of top-left corner:", value=26.42, step=0.01,format='%f',on_change=callback_map)
     with col2:
@@ -239,6 +244,8 @@ def main():
         st.session_state.box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.39, step=0.01,on_change=callback_map)
     with col4:
         st.session_state.box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.59, step=0.01,on_change=callback_map)
+    if prev_lat1 != st.session_state.box_lat1 or prev_lat2!=st.session_state.box_lat2 or prev_lon1 != st.session_state.box_lon1 or prev_lon2!=st.session_state.box_lon2:
+        callback_map()
     area = np.abs(st.session_state.box_lat2-st.session_state.box_lat1)*np.abs(st.session_state.box_lon2-st.session_state.box_lon1)
     area = round(area,5)
     st.write(f"Area of the bounding box is {area} sq units.")
@@ -274,8 +281,8 @@ def main():
         # folium_static(world_map, width=1500, height=800)
         folium_static(st.session_state.india_map,width=1400,height=800)
         
-        ab = st.secrets["Api_key"]
-        # ab = "AIzaSyB_CahkW9gvtj3QN6FBvu58c9KNyXsaS94"
+        # ab = st.secrets["Api_key"]
+        ab = "AIzaSyB_CahkW9gvtj3QN6FBvu58c9KNyXsaS94"
         
 
 
