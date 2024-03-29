@@ -395,6 +395,9 @@ def main():
       
                 return indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list,lat_ones,lon_ones
             indices_of_ones,latitudes,longitudes,image_list,indices_of_zeros,my_bar,results,prob_flat_list,lat_ones,lon_ones=done_before(df,drawn_polygons) 
+
+            # reset = st.button("Reset")
+            
             # temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
             # st.write(indices_of_ones,prob_flat_list)
 
@@ -440,7 +443,8 @@ def main():
             #         zipf.write(image_path, arcname=image_filename)
                         
         
-                
+            mid_lat = (box_lat1+box_lat2)/2
+            mid_lon = (box_lon1+box_lon2)/2
                     
 
             count_ones = []
@@ -725,6 +729,9 @@ def main():
                 #         ax.axis('off')
                 #     plt.tight_layout()
                 #     st.pyplot(fig)
+                reset = st.button("Reset")
+                if reset:
+                    st.session_state.india_map.location = [mid_lat,mid_lon]
             else:
                 st.write("No Brick Kilns detected in the selected region!")
                 # with open('images_no_kiln.zip', 'rb') as zip_file:
