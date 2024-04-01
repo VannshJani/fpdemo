@@ -51,6 +51,7 @@ def callback_map():
     st.session_state.india_map.location = [(st.session_state.box_lat1+st.session_state.box_lat2)/2,(st.session_state.box_lon1+st.session_state.box_lon2)/2]
     st.session_state.zoomed_in=True
     st.session_state.num_bk = 0 
+    plugins.MousePosition().add_to(st.session_state.india_map)
 
 
 # @st.cache_resource(show_spinner = False)
@@ -243,7 +244,7 @@ def main():
     with col3:
         st.session_state.box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.41, step=0.01,on_change=callback_map)
     with col4:
-        st.session_state.box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.59, step=0.01,on_change=callback_map)
+        st.session_state.box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.578, step=0.01,on_change=callback_map)
     if prev_lat1 != st.session_state.box_lat1 or prev_lat2!=st.session_state.box_lat2 or prev_lon1 != st.session_state.box_lon1 or prev_lon2!=st.session_state.box_lon2:
         callback_map()
     area = np.abs(st.session_state.box_lat2-st.session_state.box_lat1)*np.abs(st.session_state.box_lon2-st.session_state.box_lon1)
