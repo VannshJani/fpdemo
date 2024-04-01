@@ -92,8 +92,6 @@ def create_map(zoom_level,location = [20.5937, 78.9629]):
         # location = [26.4,79.58],
         zoom_start=zoom_level,
         control_scale=True,
-        width = 1400,
-        height = 900
     )
 
     # Add Mapbox tiles with 'Mapbox Satellite' style
@@ -283,6 +281,7 @@ def main():
         folium_static(st.session_state.india_map,width=1400,height=800)
         
         ab = st.secrets["Api_key"]
+        # ab  = "AIzaSyB_CahkW9gvtj3QN6FBvu58c9KNyXsaS94"
   
         
 
@@ -499,10 +498,12 @@ def main():
             n_zig = 0
             n_fcbk = 0
             dictionary = {}
+            boxes_to_take = {}
             ind = 0
             for i in indices_of_ones:
                 r = results[i]
                 boxes = r.boxes
+                boxes_to_take[i] = []
                 for box in boxes:
                     x_c,y_c,w,h = box.xywh[0]
                     x_c = x_c.item()
@@ -511,10 +512,26 @@ def main():
                     delta_y = y_c - 640
                     delta_x = x_c - 640
                     lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
-                    bk_lats.append(lat_value)
-                    bk_lons.append(lng_value)
-                    conf_list.append(box.conf)
-                    class_list.append(box.cls)
+                    to_add = True
+                    if len(bk_lats) > 1:
+                        for j in range(len(bk_lats)):
+                            if np.abs(lat_value-bk_lats[j]) < 0.0001 and np.abs(lng_value-bk_lons[j]) < 0.0001:
+                                to_add = False
+                                if conf_list[j] < box.conf.item():
+                                    bk_lats[j] = lat_value
+                                    bk_lons[j] = lng_value
+                                    conf_list[j] = box.conf
+                                    class_list[j] = box.cls
+                                    boxes_to_take[j].append(box)
+                                break
+                    if to_add:
+                        bk_lats.append(lat_value)
+                        bk_lons.append(lng_value)
+                        conf_list.append(box.conf)
+                        class_list.append(box.cls)
+                        boxes_to_take[i].append(box)
+                    
+
                 ind += 1
             # st.write(len(bk_lats),len(bk_lons))
             # st.write(n_count_ones)
@@ -640,32 +657,31 @@ def main():
                 if t:
                     ####### Bounding Boxes ########
                     st.write("Bounding Box Predictions!")
+                    st.write("There could be some predictions outside the bounding box as well!")
                     ind = 0
-                    bk_lats = []
-                    bk_lons = []
                     for i in indices_of_ones:
                         r = results[i]
                         # st.write(len(r.boxes.cls))
                         annotator = Annotator(image_list[i])
                         # image_lat = []
                         # image_lon = []
-                        boxes = r.boxes
-                        x_centers = []
-                        y_centers = []
-                        # st.write(len(boxes))
+                        boxes = boxes_to_take[i]
+                        # x_centers = []
+                        # y_centers = []
+                        # st.write(len(boxes),len(r.boxes))
                         for box in boxes:
                             # st.write(box.xywh[0])
-                            x_c,y_c,w,h = box.xywh[0]
-                            x_c = x_c.item()
-                            y_c = y_c.item()
-                            result = project(lat_ones[ind], lon_ones[ind])
-                            delta_y = y_c - 640
-                            delta_x = x_c - 640
-                            lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
-                            bk_lats.append(lat_value)
-                            bk_lons.append(lng_value)
-                            x_centers.append(x_c)
-                            y_centers.append(y_c)
+                            # x_c,y_c,w,h = box.xywh[0]
+                            # x_c = x_c.item()
+                            # y_c = y_c.item()
+                            # result = project(lat_ones[ind], lon_ones[ind])
+                            # delta_y = y_c - 640
+                            # delta_x = x_c - 640
+                            # lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
+                            # bk_lats.append(lat_value)
+                            # bk_lons.append(lng_value)
+                            # x_centers.append(x_c)
+                            # y_centers.append(y_c)
                             b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
                             c = box.cls
                             if c.item() == 1:
