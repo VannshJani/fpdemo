@@ -241,7 +241,7 @@ def main():
     with col2:
         st.session_state.box_lon1 = st.number_input("Lon of top-left corner:", value=79.57, step=0.01,on_change=callback_map)
     with col3:
-        st.session_state.box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.40, step=0.01,on_change=callback_map)
+        st.session_state.box_lat2 = st.number_input("Lat of bottom-right corner:", value=26.41, step=0.01,on_change=callback_map)
     with col4:
         st.session_state.box_lon2 = st.number_input("Lon of bottom-right corner:", value=79.59, step=0.01,on_change=callback_map)
     if prev_lat1 != st.session_state.box_lat1 or prev_lat2!=st.session_state.box_lat2 or prev_lon1 != st.session_state.box_lon1 or prev_lon2!=st.session_state.box_lon2:
