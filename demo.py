@@ -559,13 +559,13 @@ def main():
                     if isinstance(conf_new[indexs], torch.Tensor):
                         for z in range(len(conf_new[indexs])):
                             truncated_float = int(conf_new[indexs][z] * 100) / 100
-                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(new_lats[i],2)], 'Longitude': [round(new_lons[i],2)],'Confidence':[truncated_float]})
+                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [new_lats[i]], 'Longitude': [new_lons[i]],'Confidence':[truncated_float]})
                             s_no+=1
                             # Concatenate the temporary DataFrame with the main DataFrame
                             df = pd.concat([df, temp_df], ignore_index=True)
                     else:
                         truncated_float = int(conf_new[indexs] * 100) / 100
-                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [round(new_lats[i],2)], 'Longitude': [round(new_lons[i],2)],'Confidence':[truncated_float]})
+                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [new_lats[i]], 'Longitude': [new_lons[i]],'Confidence':[truncated_float]})
                         s_no+=1
                         df = pd.concat([df, temp_df], ignore_index=True)
                     indexs += 1
