@@ -63,7 +63,7 @@ def callback_map():
 # download_model()
 @st.cache_resource(show_spinner=False)
 def load_model():
-    model_path = hf_hub_download(repo_id="Vannsh/yolov8", filename="yolov8m_best.pt")
+    model_path = hf_hub_download(repo_id="Vannsh/yolo_model", filename="best_yolo.pt")
     model = YOLO(model_path, task="detect")
     # path = "/Users/vannshjani/Downloads/yolov8_weights.pt"
     # model = YOLO(path,task='detect')
