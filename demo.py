@@ -143,6 +143,35 @@ def inverse_project(x,y):
     lng = lng * 180 / np.pi
     lat = lat * 180 / np.pi
     return lat, lng
+
+def add_box_to_map(lat1,lon1,lat2,lon2,lat3,lon3,lat4,lon4,cls,map):
+    # if cls==1:
+    #     folium.Polygon([(lat1,lon1), (lat2,lon2), (lat3,lon3), (lat4,lon4)],
+    #            color="blue",
+    #            weight=2,
+    #            fill=False,
+    #            tooltip="Zigzag").add_to(st.session_state.india_map)
+    # else:
+    #     folium.Polygon([(lat1,lon1), (lat2,lon2), (lat3,lon3), (lat4,lon4)],
+    #            color="red",
+    #            weight=2,
+    #            fill=False,
+    #            tooltip="FCBK").add_to(st.session_state.india_map)
+    tooltip_text = "Zigzag" if cls == 1 else "FCBK"
+    color = "blue" if cls == 1 else "red"
+
+    folium.Polygon(
+        locations=[(lat1, lon1), (lat2, lon2), (lat3, lon3), (lat4, lon4)],
+        color=color,
+        weight=2,
+        fill=False,
+        fill_opacity=0,
+        tooltip=tooltip_text
+    ).add_to(map)
+    
+    
+
+
 # def get_new_coords(lat,long,shift):
 #     x,y = project(lat,long)
 #     if shift=="left":
@@ -288,7 +317,7 @@ def main():
         
         # Display the map as an image using st.image()
         # folium_static(world_map, width=1500, height=800)
-        folium_static(st.session_state.india_map,width=1400,height=800)
+        folium_static(st.session_state.india_map,width=1200,height=800)
         
         ab = st.secrets["Api_key"]
   
@@ -507,6 +536,22 @@ def main():
             n_fcbk = 0
             dictionary = {}
             boxes_to_take = {}
+            lat_x1 = []
+            lon_y1 = []
+            lat_x2 = []
+            lon_y2 = []
+            lat_x3 = []
+            lon_y3 = []
+            lat_x4 = []
+            lon_y4 = []
+            lat_x1_new = []
+            lon_y1_new = []
+            lat_x2_new = []
+            lon_y2_new = []
+            lat_x3_new = []
+            lon_y3_new = []
+            lat_x4_new = []
+            lon_y4_new = []
             ind = 0
             for i in indices_of_ones:
                 r = results[i]
@@ -516,6 +561,14 @@ def main():
                 lon_images = []
                 conf_images = []
                 class_images = []
+                lat1_images = []
+                lon1_images = []
+                lat2_images = []
+                lon2_images = []
+                lat3_images = []
+                lon3_images = []
+                lat4_images = []
+                lon4_images = []
                 for box in boxes:
                     # print(box.xywhr[0])
                     x_c,y_c,w,h,r = box.xywhr[0]
@@ -525,6 +578,21 @@ def main():
                     delta_y = y_c - 640
                     delta_x = x_c - 640
                     lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
+                    # st.write(box.xyxyxyxy[0][0])
+                    x1_b,y1_b,x2_b,y2_b,x3_b,y3_b,x4_b,y4_b = box.xyxyxyxy[0][0][0],box.xyxyxyxy[0][0][1],box.xyxyxyxy[0][1][0],box.xyxyxyxy[0][1][1],box.xyxyxyxy[0][2][0],box.xyxyxyxy[0][2][1],box.xyxyxyxy[0][3][0],box.xyxyxyxy[0][3][1]
+                    x1_b,y1_b,x2_b,y2_b,x3_b,y3_b,x4_b,y4_b = x1_b.item(),y1_b.item(),x2_b.item(),y2_b.item(),x3_b.item(),y3_b.item(),x4_b.item(),y4_b.item()
+                    delta_x1 = x1_b - 640
+                    delta_y1 = y1_b - 640
+                    delta_x2 = x2_b - 640
+                    delta_y2 = y2_b - 640
+                    delta_x3 = x3_b - 640
+                    delta_y3 = y3_b - 640
+                    delta_x4 = x4_b - 640
+                    delta_y4 = y4_b - 640
+                    lat1,lon1 = inverse_project(result[0]+delta_x1,result[1]+delta_y1)
+                    lat2,lon2 = inverse_project(result[0]+delta_x2,result[1]+delta_y2)
+                    lat3,lon3 = inverse_project(result[0]+delta_x3,result[1]+delta_y3)
+                    lat4,lon4 = inverse_project(result[0]+delta_x4,result[1]+delta_y4)
                     to_add = True
                     if len(boxes_to_take[i]) > 0:
                         for j in range(len(boxes_to_take[i])):
@@ -536,6 +604,14 @@ def main():
                                     conf_images[j] = box.conf
                                     class_images[j] = box.cls
                                     boxes_to_take[j].append(box)
+                                    lat1_images[j] = lat1
+                                    lon1_images[j] = lon1
+                                    lat2_images[j] = lat2
+                                    lon2_images[j] = lon2
+                                    lat3_images[j] = lat3
+                                    lon3_images[j] = lon3
+                                    lat4_images[j] = lat4
+                                    lon4_images[j] = lon4
                                 break
                     if to_add:
                         lat_images.append(lat_value)
@@ -543,11 +619,27 @@ def main():
                         conf_images.append(box.conf)
                         class_images.append(box.cls)
                         boxes_to_take[i].append(box)
+                        lat1_images.append(lat1)
+                        lon1_images.append(lon1)
+                        lat2_images.append(lat2)
+                        lon2_images.append(lon2)
+                        lat3_images.append(lat3)
+                        lon3_images.append(lon3)
+                        lat4_images.append(lat4)
+                        lon4_images.append(lon4)
                 # st.write(i,boxes_to_take[i])
                 bk_lats.extend(lat_images)
                 bk_lons.extend(lon_images)
                 conf_list.extend(conf_images)
                 class_list.extend(class_images)
+                lat_x1.extend(lat1_images)
+                lon_y1.extend(lon1_images)
+                lat_x2.extend(lat2_images)
+                lon_y2.extend(lon2_images)
+                lat_x3.extend(lat3_images)
+                lon_y3.extend(lon3_images)
+                lat_x4.extend(lat4_images)
+                lon_y4.extend(lon4_images)
             
 
                     
@@ -563,12 +655,21 @@ def main():
                     new_lons.append(bk_lons[i])
                     conf_new.append(conf_list[i])
                     class_new.append(class_list[i])
+                    lat_x1_new.append(lat_x1[i])
+                    lon_y1_new.append(lon_y1[i])
+                    lat_x2_new.append(lat_x2[i])
+                    lon_y2_new.append(lon_y2[i])
+                    lat_x3_new.append(lat_x3[i])
+                    lon_y3_new.append(lon_y3[i])
+                    lat_x4_new.append(lat_x4[i])
+                    lon_y4_new.append(lon_y4[i])
                     continue
                 else:
                     n_counts_ones_mod -= 1
             # st.write(n_counts_ones_mod)
             # st.write("new")
             # st.write(new_lats,new_lons,conf_new,class_new,boxes_to_take)
+            assert len(new_lats) == len(lat_x1_new)
             if n_counts_ones_mod!=0:
 
                 for i in range(len(class_new)):
@@ -623,16 +724,22 @@ def main():
                     # num_bk = 0
                     # mid_lat = (box_lat1+box_lat2)/2
                     # mid_lon = (box_lon1+box_lon2)/2
-                    st.session_state.india_map=create_map(14,location = [mid_lat,mid_lon])
-                    bounding_box_polygon.add_to(st.session_state.india_map)
-                    for Idx in range(len(bk_lats)):
-                        lat = bk_lats[Idx]
-                        lon = bk_lons[Idx]
+                    # st.write(len(bk_lats),len(lat_x1),len(lat_x1_new),len(new_lats))
+                    st.session_state.india_map=create_map(15,location = [mid_lat,mid_lon])
+                    # rect_fg = folium.FeatureGroup()
+                    poly_fg = folium.FeatureGroup()
+                    # bounding_box_polygon.add_to(rect_fg)
+                    # st.session_state.india_map.add_child(rect_fg)
+                    for Idx in range(len(new_lats)):
+                        lat = new_lats[Idx]
+                        lon = new_lons[Idx]
                         if lat>=st.session_state.box_lat2 and lat<=st.session_state.box_lat1 and lon>=st.session_state.box_lon1 and lon<=st.session_state.box_lon2:
                             # continue
                             # st.write(lat,lon)
                             st.session_state.num_bk += 1
-                            add_locations(lat,lon,st.session_state.india_map)
+                            # add_locations(lat,lon,st.session_state.india_map)
+                            add_box_to_map(lat_x1_new[Idx],lon_y1_new[Idx],lat_x2_new[Idx],lon_y2_new[Idx],lat_x3_new[Idx],lon_y3_new[Idx],lat_x4_new[Idx],lon_y4_new[Idx],class_new[Idx],poly_fg)
+                    st.session_state.india_map.add_child(poly_fg)
                     st.session_state.zoomed_in = False
                     st.rerun()
                 # st.write("The number of brick kilns in the selected region is: ", st.session_state.num_bk)
@@ -668,6 +775,7 @@ def main():
                     file_name = "points.kml",
                     mime = 'application/vnd.google-earth.kml+xml'
                     ) 
+         
 
                 # Cleanup: Remove the temporary directory and zip file
                 # shutil.rmtree(temp_dir1)
@@ -676,71 +784,71 @@ def main():
                 # os.remove('images_no_kiln.zip')
                 
                 # st.write(class_list)
-                t=st.toggle("plots")
-                if t:
-                    ####### Bounding Boxes ########
-                    st.write("Bounding Box Predictions!")
-                    st.write("There could be some predictions outside the bounding box as well!")
-                    ind = 0
-                    for i in indices_of_ones:
-                        r = results[i]
-                        # st.write(len(r.boxes.cls))
-                        annotator = Annotator(image_list[i])
-                        # image_lat = []
-                        # image_lon = []
-                        boxes = boxes_to_take[i]
-                        # x_centers = []
-                        # y_centers = []
-                        # st.write(len(boxes),len(r.boxes))
-                        for box in boxes:
-                            # st.write(box.xywh[0])
-                            # x_c,y_c,w,h = box.xywh[0]
-                            # x_c = x_c.item()
-                            # y_c = y_c.item()
-                            # result = project(lat_ones[ind], lon_ones[ind])
-                            # delta_y = y_c - 640
-                            # delta_x = x_c - 640
-                            # lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
-                            # bk_lats.append(lat_value)
-                            # bk_lons.append(lng_value)
-                            # x_centers.append(x_c)
-                            # y_centers.append(y_c)
-                            b = box.xyxyxyxy[0]  # get box coordinates in (left, top, right, bottom) format
-                            c = box.cls
-                            if c.item() == 1:
-                                color = (0, 0, 255)
-                            else:
-                                color = (255, 0, 0)
+                # t=st.toggle("plots")
+                # if t:
+                #     ####### Bounding Boxes ########
+                #     st.write("Bounding Box Predictions!")
+                #     st.write("There could be some predictions outside the bounding box as well!")
+                #     ind = 0
+                #     for i in indices_of_ones:
+                #         r = results[i]
+                #         # st.write(len(r.boxes.cls))
+                #         annotator = Annotator(image_list[i])
+                #         # image_lat = []
+                #         # image_lon = []
+                #         boxes = boxes_to_take[i]
+                #         # x_centers = []
+                #         # y_centers = []
+                #         # st.write(len(boxes),len(r.boxes))
+                #         for box in boxes:
+                #             # st.write(box.xywh[0])
+                #             # x_c,y_c,w,h = box.xywh[0]
+                #             # x_c = x_c.item()
+                #             # y_c = y_c.item()
+                #             # result = project(lat_ones[ind], lon_ones[ind])
+                #             # delta_y = y_c - 640
+                #             # delta_x = x_c - 640
+                #             # lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
+                #             # bk_lats.append(lat_value)
+                #             # bk_lons.append(lng_value)
+                #             # x_centers.append(x_c)
+                #             # y_centers.append(y_c)
+                #             b = box.xyxyxyxy[0]  # get box coordinates in (left, top, right, bottom) format
+                #             c = box.cls
+                #             if c.item() == 1:
+                #                 color = (0, 0, 255)
+                #             else:
+                #                 color = (255, 0, 0)
                             
-                            # list_box = b.tolist()
-                            # st.write(list_box)
-                            # two_point_list = [[list_box[0],list_box[1]],[list_box[2],list_box[3]]]
-                            annotator.box_label(b, model.names[int(c)], color=color,rotated=True)
-                            # write confidence to right of bounding boxes
-                            # annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
-                            # annotator.text((b[0]+85, b[1]+85), f"Lat-{b_lat},Lon-{b_lon}")
+                #             # list_box = b.tolist()
+                #             # st.write(list_box)
+                #             # two_point_list = [[list_box[0],list_box[1]],[list_box[2],list_box[3]]]
+                #             annotator.box_label(b, model.names[int(c)], color=color,rotated=True)
+                #             # write confidence to right of bounding boxes
+                #             # annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
+                #             # annotator.text((b[0]+85, b[1]+85), f"Lat-{b_lat},Lon-{b_lon}")
 
-                        img = annotator.result()
-                        # st.write(len(results))
-                        # if isinstance(prob_flat_list[ind], torch.Tensor):
-                        #     list_of_probs = prob_flat_list[ind].tolist()
-                        #     for z in range(len(list_of_probs)):
-                        #         st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(list_of_probs[z],2)}")
-                        # else:
-                        #     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
+                #         img = annotator.result()
+                #         # st.write(len(results))
+                #         # if isinstance(prob_flat_list[ind], torch.Tensor):
+                #         #     list_of_probs = prob_flat_list[ind].tolist()
+                #         #     for z in range(len(list_of_probs)):
+                #         #         st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(list_of_probs[z],2)}")
+                #         # else:
+                #         #     st.write(f"Latitude: {round(latitudes[i],2)}, Longitude: {round(longitudes[i],2)}, Confidence: {round(prob_flat_list[ind],2)}")
                         
-                        plt.figure(figsize=(8, 4))
-                        plt.imshow(img)
-                        plt.axis('off')
-                        plt.show()
-                        # plt.scatter(640, 640, c='r', s=40)
-                        # plt.scatter(640, 200, c='g', s=40)
-                        # for i in range(len(x_centers)):
-                        #     plt.scatter(x_centers[i], y_centers[i], c='b', s=40)
-                        plt.title(f"Latitude: {round(lat_ones[ind],2)}, Longitude: {round(lon_ones[ind],2)}")
-                        plt.tight_layout()
-                        st.pyplot(plt)
-                        ind += 1
+                #         plt.figure(figsize=(8, 4))
+                #         plt.imshow(img)
+                #         plt.axis('off')
+                #         plt.show()
+                #         # plt.scatter(640, 640, c='r', s=40)
+                #         # plt.scatter(640, 200, c='g', s=40)
+                #         # for i in range(len(x_centers)):
+                #         #     plt.scatter(x_centers[i], y_centers[i], c='b', s=40)
+                #         plt.title(f"Latitude: {round(lat_ones[ind],2)}, Longitude: {round(lon_ones[ind],2)}")
+                #         plt.tight_layout()
+                #         st.pyplot(plt)
+                #         ind += 1
                 
                 # if st.session_state.zoomed_in:
                 #     # indices_of_ones = np.array(indices_of_ones)
