@@ -48,10 +48,20 @@ def callback():
 def callback_map():
     st.session_state.button1=False
     st.session_state.india_map = create_map(12)
+    if 'box_lat1' not in st.session_state:
+        st.session_state.box_lat1 = 26.42
+    if 'box_lon1' not in st.session_state:
+        st.session_state.box_lon1 = 79.57
+    if 'box_lat2' not in st.session_state:
+        st.session_state.box_lat2 = 26.39
+    if 'box_lon2' not in st.session_state:
+        st.session_state.box_lon2 = 79.59
     st.session_state.india_map.location = [(st.session_state.box_lat1+st.session_state.box_lat2)/2,(st.session_state.box_lon1+st.session_state.box_lon2)/2]
     st.session_state.zoomed_in=True
     st.session_state.num_bk = 0 
     plugins.MousePosition().add_to(st.session_state.india_map)
+
+# st.write(st.session_state.box_lat1)
 
 
 # @st.cache_resource(show_spinner = False)
@@ -63,8 +73,8 @@ def callback_map():
 # download_model()
 @st.cache_resource(show_spinner=False)
 def load_model():
-    model_path = hf_hub_download(repo_id="Vannsh/yolo_model", filename="best_yolo.pt")
-    model = YOLO(model_path, task="detect")
+    model_path = hf_hub_download(repo_id="Vannsh/v8x-obb", filename="obb3.pt")
+    model = YOLO(model_path,task='obb')
     # path = "/Users/vannshjani/Downloads/yolov8_weights.pt"
     # model = YOLO(path,task='detect')
     return model
@@ -281,7 +291,6 @@ def main():
         folium_static(st.session_state.india_map,width=1400,height=800)
         
         ab = st.secrets["Api_key"]
-        # ab  = "AIzaSyB_CahkW9gvtj3QN6FBvu58c9KNyXsaS94"
   
         
 
@@ -353,20 +362,19 @@ def main():
 
                         # Resize the image
                         # image = image.resize((new_width, new_height), Image.LANCZOS)
-
                         image = image.convert('RGB')
                         temp_result = model.predict(image)
                         r = temp_result[0]
-                        if len(r.boxes.cls)==0:
+                        if len(r.obb.cls)==0:
                             indices_of_zeros.append(i)
-                        elif len(r.boxes.cls)==1:
+                        elif len(r.obb.cls)==1:
                             indices_of_ones.append(i)
-                            prob_flat_list.append(r.boxes.conf.item())
+                            prob_flat_list.append(r.obb.conf.item())
                             lat_ones.append(latitude)
                             lon_ones.append(longitude)
                         else:
                             indices_of_ones.append(i)
-                            prob_flat_list.append(r.boxes.conf)
+                            prob_flat_list.append(r.obb.conf)
                             lat_ones.append(latitude)
                             lon_ones.append(longitude)
                         i += 1
@@ -473,11 +481,11 @@ def main():
             count_ones = []
             count_zeros = []
             for r in results:
-                if len(r.boxes.cls)==0:
+                if len(r.obb.cls)==0:
                     count_ones.append(0)
                     count_zeros.append(1)
                 else:
-                    count_ones.append(len(r.boxes.cls))
+                    count_ones.append(len(r.obb.cls))
                     count_zeros.append(0)
             n_count_ones = sum(count_ones)
             n_count_zeros = sum(count_zeros)
@@ -502,10 +510,15 @@ def main():
             ind = 0
             for i in indices_of_ones:
                 r = results[i]
-                boxes = r.boxes
+                boxes = r.obb
                 boxes_to_take[i] = []
+                lat_images = []
+                lon_images = []
+                conf_images = []
+                class_images = []
                 for box in boxes:
-                    x_c,y_c,w,h = box.xywh[0]
+                    # print(box.xywhr[0])
+                    x_c,y_c,w,h,r = box.xywhr[0]
                     x_c = x_c.item()
                     y_c = y_c.item()
                     result = project(lat_ones[ind], lon_ones[ind])
@@ -513,26 +526,34 @@ def main():
                     delta_x = x_c - 640
                     lat_value,lng_value = inverse_project(result[0]+delta_x,result[1]+delta_y)
                     to_add = True
-                    if len(bk_lats) > 1:
-                        for j in range(len(bk_lats)):
-                            if np.abs(lat_value-bk_lats[j]) < 0.0001 and np.abs(lng_value-bk_lons[j]) < 0.0001:
+                    if len(boxes_to_take[i]) > 0:
+                        for j in range(len(boxes_to_take[i])):
+                            if np.abs(lat_value-lat_images[j]) < 0.0001 and np.abs(lng_value-lon_images[j]) < 0.0001:
                                 to_add = False
-                                if conf_list[j] < box.conf.item():
-                                    bk_lats[j] = lat_value
-                                    bk_lons[j] = lng_value
-                                    conf_list[j] = box.conf
-                                    class_list[j] = box.cls
+                                if conf_images[j] < box.conf.item():
+                                    lat_images[j] = lat_value
+                                    lon_images[j] = lng_value
+                                    conf_images[j] = box.conf
+                                    class_images[j] = box.cls
                                     boxes_to_take[j].append(box)
                                 break
                     if to_add:
-                        bk_lats.append(lat_value)
-                        bk_lons.append(lng_value)
-                        conf_list.append(box.conf)
-                        class_list.append(box.cls)
+                        lat_images.append(lat_value)
+                        lon_images.append(lng_value)
+                        conf_images.append(box.conf)
+                        class_images.append(box.cls)
                         boxes_to_take[i].append(box)
+                # st.write(i,boxes_to_take[i])
+                bk_lats.extend(lat_images)
+                bk_lons.extend(lon_images)
+                conf_list.extend(conf_images)
+                class_list.extend(class_images)
+            
+
                     
 
                 ind += 1
+            # st.write(bk_lats,bk_lons)
             # st.write(len(bk_lats),len(bk_lons))
             # st.write(n_count_ones)
             n_counts_ones_mod = n_count_ones
@@ -546,20 +567,22 @@ def main():
                 else:
                     n_counts_ones_mod -= 1
             # st.write(n_counts_ones_mod)
+            # st.write("new")
+            # st.write(new_lats,new_lons,conf_new,class_new,boxes_to_take)
             if n_counts_ones_mod!=0:
 
                 for i in range(len(class_new)):
                     if len(class_new[i])==1:
                         if class_new[i].item()==0:
-                            n_zig += 1
-                        else:
                             n_fcbk += 1
+                        else:
+                            n_zig += 1
                     else:
                         for j in range(len(class_new[i])):
                             if class_new[i][j].item()==0:
-                                n_zig += 1
-                            else:
                                 n_fcbk += 1
+                            else:
+                                n_zig += 1
 
                 dictionary["ZIGZAG"] = n_zig
                 dictionary["FCBK"] = n_fcbk
@@ -611,7 +634,7 @@ def main():
                             st.session_state.num_bk += 1
                             add_locations(lat,lon,st.session_state.india_map)
                     st.session_state.zoomed_in = False
-                    st.experimental_rerun()
+                    st.rerun()
                 # st.write("The number of brick kilns in the selected region is: ", st.session_state.num_bk)
                 # folium_static(india_map)
                 st.markdown("### Download options")
@@ -652,7 +675,7 @@ def main():
                 # shutil.rmtree(temp_dir2)
                 # os.remove('images_no_kiln.zip')
                 
-
+                # st.write(class_list)
                 t=st.toggle("plots")
                 if t:
                     ####### Bounding Boxes ########
@@ -682,16 +705,19 @@ def main():
                             # bk_lons.append(lng_value)
                             # x_centers.append(x_c)
                             # y_centers.append(y_c)
-                            b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
+                            b = box.xyxyxyxy[0]  # get box coordinates in (left, top, right, bottom) format
                             c = box.cls
                             if c.item() == 1:
                                 color = (0, 0, 255)
                             else:
                                 color = (255, 0, 0)
                             
-                            annotator.box_label(b, model.names[int(c)], color=color)
+                            # list_box = b.tolist()
+                            # st.write(list_box)
+                            # two_point_list = [[list_box[0],list_box[1]],[list_box[2],list_box[3]]]
+                            annotator.box_label(b, model.names[int(c)], color=color,rotated=True)
                             # write confidence to right of bounding boxes
-                            annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
+                            # annotator.text((b[0]+75, b[1]+75), f"{round(box.conf.item(),2)}",txt_color=color)
                             # annotator.text((b[0]+85, b[1]+85), f"Lat-{b_lat},Lon-{b_lon}")
 
                         img = annotator.result()
