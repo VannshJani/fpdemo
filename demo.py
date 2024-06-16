@@ -692,7 +692,7 @@ def main():
                 df2 = df2.T
                 df2.columns = ['Count']
                 # middle align df2 to be at center of page
-
+                st.write(":red[Red] bounding boxes represent :red[FCBK] and :blue[Blue] bounding boxes represent :blue[Zigzag].")
                 st.write(df2,use_container_width=True)
                 s_no =1
                 indexs = 0
