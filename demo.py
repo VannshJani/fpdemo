@@ -698,16 +698,17 @@ def main():
                 indexs = 0
                 # st.write(len(new_lats),len(conf_new))
                 for i in range(len(new_lats)):
+                    c_var = {0:"FCBK",1:"Zigzag"}
                     if isinstance(conf_new[indexs], torch.Tensor):
                         for z in range(len(conf_new[indexs])):
                             truncated_float = int(conf_new[indexs][z] * 100) / 100
-                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [new_lats[i]], 'Longitude': [new_lons[i]],'Confidence':[truncated_float]})
+                            temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [new_lats[i]], 'Longitude': [new_lons[i]],'Confidence':[truncated_float],"Class":[c_var[int(class_new[i][z].item())]]})
                             s_no+=1
                             # Concatenate the temporary DataFrame with the main DataFrame
                             df = pd.concat([df, temp_df], ignore_index=True)
                     else:
                         truncated_float = int(conf_new[indexs] * 100) / 100
-                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [new_lats[i]], 'Longitude': [new_lons[i]],'Confidence':[truncated_float]})
+                        temp_df = pd.DataFrame({'Sr.No':[s_no],'Latitude': [new_lats[i]], 'Longitude': [new_lons[i]],'Confidence':[truncated_float],"Class":[c_var[int(class_new[i].item())]]})
                         s_no+=1
                         df = pd.concat([df, temp_df], ignore_index=True)
                     indexs += 1
