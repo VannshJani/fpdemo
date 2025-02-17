@@ -24,6 +24,7 @@ from tensorflow import keras
 from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
 import matplotlib.pyplot as plt
 import simplekml
+from ultralytics.nn.tasks import OBBModel
 
 
 st.set_page_config(layout="wide")
@@ -73,6 +74,7 @@ def callback_map():
 # download_model()
 @st.cache_resource(show_spinner=False)
 def load_model():
+    torch.serialization.add_safe_globals([OBBModel])
     model_path = hf_hub_download(repo_id="Vannsh/v8x-obb", filename="obb3.pt")
     model = YOLO(model_path,task='obb')
     # path = "/Users/vannshjani/Downloads/yolov8_weights.pt"
