@@ -74,9 +74,11 @@ def callback_map():
 # download_model()
 @st.cache_resource(show_spinner=False)
 def load_model():
-    torch.serialization.add_safe_globals([OBBModel])
     model_path = hf_hub_download(repo_id="Vannsh/v8x-obb", filename="obb3.pt")
-    model = YOLO(model_path,task='obb')
+    model_dict = torch.load(model_path, weights_only=False)
+    model = YOLO(task='obb')
+    model.model.load_state_dict(model_dict)
+    # model = YOLO(model_path,task='obb')
     # path = "/Users/vannshjani/Downloads/yolov8_weights.pt"
     # model = YOLO(path,task='detect')
     return model
