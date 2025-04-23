@@ -74,11 +74,13 @@ def callback_map():
 # download_model()
 @st.cache_resource(show_spinner=False)
 def load_model():
-    model_path = hf_hub_download(repo_id="Vannsh/v8x-obb", filename="obb3.pt")
-    # model_dict = torch.load(model_path, weights_only=False)
-    # model = YOLO(task='obb')
-    # model.model.load_state_dict(model_dict)
-    model = YOLO(model_path,task='obb')
+    file_id = st.secrets["file"]
+    # "https://drive.google.com/file/d/1BEYIG6LNA5uoSbu_DdSxgH_uiw6JHWu0/view?usp=share_link"
+    url = f"https://drive.google.com/uc?id={file_id}"
+    output = "obb3.pt"
+    gdown.download(url, output, quiet=False)
+
+    model = YOLO(output, task='obb')
     # path = "/Users/vannshjani/Downloads/yolov8_weights.pt"
     # model = YOLO(path,task='detect')
     return model
